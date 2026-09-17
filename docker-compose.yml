@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16.8-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - nakama_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  nakama:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: squad-survival-nakama:3.40.0
+    entrypoint:
+      - "/bin/sh"
+      - "-ec"
+      - >
+        /nakama/nakama migrate up --database.address ${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB} &&
+        exec /nakama/nakama
+        --name nakama1
+        --database.address ${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+        --logger.level DEBUG
+        --socket.server_key ${NAKAMA_SERVER_KEY}
+        --session.encryption_key ${NAKAMA_SESSION_ENCRYPTION_KEY}
+        --session.refresh_encryption_key ${NAKAMA_SESSION_REFRESH_ENCRYPTION_KEY}
+        --session.token_expiry_sec 7200
+        --runtime.http_key ${NAKAMA_RUNTIME_HTTP_KEY}
+        --console.username ${NAKAMA_CONSOLE_USERNAME}
+        --console.password ${NAKAMA_CONSOLE_PASSWORD}
+        --console.signing_key ${NAKAMA_CONSOLE_SIGNING_KEY}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+    healthcheck:
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nakama_postgres_data:

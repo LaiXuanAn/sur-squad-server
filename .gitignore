@@ -1,0 +1,17 @@
+.env
+
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.*
+
+# Go workspace and vendored dependencies
+go.work
+go.work.sum
+vendor/
