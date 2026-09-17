@@ -9,7 +9,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY *.go ./
-COPY internal ./internal
+COPY modules ./modules
 RUN go build --trimpath --buildmode=plugin -o /backend/backend.so .
 
 FROM heroiclabs/nakama:3.40.0
