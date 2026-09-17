@@ -10,7 +10,7 @@ import (
 	"sort"
 	"sync"
 
-	"squad-survival-be/modules/lobby/survival"
+	"squad-survival-be/modules/game/survival"
 
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/runtime"

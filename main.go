@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"squad-survival-be/modules/lobby/matchmaking"
-	"squad-survival-be/modules/lobby/survival"
+	"squad-survival-be/modules/game/matchmaking"
+	"squad-survival-be/modules/game/survival"
 
 	"github.com/heroiclabs/nakama-common/runtime"
 )
