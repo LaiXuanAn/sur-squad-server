@@ -11,6 +11,7 @@ import (
 
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/runtime"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestJoinAttemptReservesAndExpiresSlot(t *testing.T) {
@@ -60,10 +61,15 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 	if dispatcher.label != `{"mode":"survival","status":"playing","player_count":1,"max_players":32,"joinable":true}` {
 		t.Fatalf("unexpected full label: %s", dispatcher.label)
 	}
+	assertStateSnapshot(t, dispatcher, 0, 1)
 
-	match.MatchLeave(nil, nil, nil, nil, dispatcher, 0, state, []runtime.Presence{presence})
+	match.MatchLeave(nil, nil, nil, nil, dispatcher, 2, state, []runtime.Presence{presence})
 	if dispatcher.label != `{"mode":"survival","status":"playing","player_count":0,"max_players":32,"joinable":true}` {
 		t.Fatalf("unexpected empty label: %s", dispatcher.label)
+	}
+	assertStateSnapshot(t, dispatcher, 2, 0)
+	if dispatcher.broadcastCount != 2 {
+		t.Fatalf("expected one snapshot per join/leave, got %d", dispatcher.broadcastCount)
 	}
 }
 
@@ -89,7 +95,7 @@ func TestResolveDisplayNamesUsesProfileAndUsernameFallback(t *testing.T) {
 	}
 }
 
-func TestMatchLoopIgnoresInvalidMessagesAndBroadcastsSnapshot(t *testing.T) {
+func TestMatchLoopIgnoresInvalidMessagesWithoutBroadcastingSnapshot(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
 	player := core.NewPlayer("user-1", "session-1", "Player One", core.Vector2{})
@@ -101,7 +107,7 @@ func TestMatchLoopIgnoresInvalidMessagesAndBroadcastsSnapshot(t *testing.T) {
 	}
 	messages := []runtime.MatchData{
 		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: 999, data: []byte(`{}`)},
-		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: core.OpMovementInput, data: []byte(`{"x":`)},
+		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: core.OpMovementInput, data: []byte{0x0a, 0x01}},
 	}
 
 	result := match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, messages)
@@ -111,15 +117,12 @@ func TestMatchLoopIgnoresInvalidMessagesAndBroadcastsSnapshot(t *testing.T) {
 	if player.Position != (core.Vector2{}) {
 		t.Fatalf("invalid messages changed position: %+v", player.Position)
 	}
-	if dispatcher.broadcastOpCode != core.OpStateSnapshot || dispatcher.broadcastReliable {
-		t.Fatalf("unexpected broadcast: opcode=%d reliable=%v", dispatcher.broadcastOpCode, dispatcher.broadcastReliable)
-	}
-	if len(dispatcher.broadcastData) == 0 {
-		t.Fatal("expected snapshot payload")
+	if dispatcher.broadcastCount != 0 {
+		t.Fatalf("match loop unexpectedly broadcast %d messages", dispatcher.broadcastCount)
 	}
 }
 
-func TestMatchLoopAppliesMovementAndBroadcastsUpdatedState(t *testing.T) {
+func TestMatchLoopAppliesMovementWithoutBroadcastingSnapshot(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
 	player := core.NewPlayer("user-1", "session-1", "Player One", core.Vector2{})
@@ -132,7 +135,7 @@ func TestMatchLoopAppliesMovementAndBroadcastsUpdatedState(t *testing.T) {
 	message := testMatchData{
 		testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID},
 		opCode:       core.OpMovementInput,
-		data:         []byte(`{"x":1,"y":0,"sequence":1}`),
+		data:         mustMarshalMovementInput(t, &core.MovementInput{X: 1, Sequence: 1}),
 	}
 
 	match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, []runtime.MatchData{message})
@@ -140,12 +143,32 @@ func TestMatchLoopAppliesMovementAndBroadcastsUpdatedState(t *testing.T) {
 		t.Fatalf("unexpected player position: %+v", player.Position)
 	}
 
+	if dispatcher.broadcastCount != 0 {
+		t.Fatalf("movement unexpectedly broadcast %d state snapshots", dispatcher.broadcastCount)
+	}
+}
+
+func mustMarshalMovementInput(t *testing.T, input *core.MovementInput) []byte {
+	t.Helper()
+	data, err := proto.Marshal(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
+}
+
+func assertStateSnapshot(t *testing.T, dispatcher *testDispatcher, tick int64, playerCount int) {
+	t.Helper()
+	if dispatcher.broadcastOpCode != core.OpStateSnapshot || !dispatcher.broadcastReliable {
+		t.Fatalf("unexpected broadcast: opcode=%d reliable=%v", dispatcher.broadcastOpCode, dispatcher.broadcastReliable)
+	}
+
 	var snapshot core.StateSnapshot
 	if err := json.Unmarshal(dispatcher.broadcastData, &snapshot); err != nil {
 		t.Fatal(err)
 	}
-	if snapshot.Tick != 1 || snapshot.PlayerCount != 1 {
-		t.Fatalf("unexpected movement snapshot: %+v", snapshot)
+	if snapshot.Tick != tick || snapshot.PlayerCount != playerCount {
+		t.Fatalf("unexpected state snapshot: %+v", snapshot)
 	}
 }
 
@@ -193,12 +216,14 @@ type testDispatcher struct {
 	broadcastOpCode   int64
 	broadcastData     []byte
 	broadcastReliable bool
+	broadcastCount    int
 }
 
 func (d *testDispatcher) BroadcastMessage(opCode int64, data []byte, _ []runtime.Presence, _ runtime.Presence, reliable bool) error {
 	d.broadcastOpCode = opCode
 	d.broadcastData = data
 	d.broadcastReliable = reliable
+	d.broadcastCount++
 	return nil
 }
 func (d *testDispatcher) BroadcastMessageDeferred(int64, []byte, []runtime.Presence, runtime.Presence, bool) error {

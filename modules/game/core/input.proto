@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package game.core;
+
+option go_package = "squad-survival-be/modules/game/core;core";
+
+message MovementInput {
+  double x = 1;
+  double y = 2;
+  uint64 sequence = 3;
+}

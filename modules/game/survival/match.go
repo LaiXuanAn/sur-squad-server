@@ -76,8 +76,9 @@ func (m *Match) MatchJoinAttempt(_ context.Context, _ runtime.Logger, _ *sql.DB,
 	return state, true, ""
 }
 
-func (m *Match) MatchJoin(ctx context.Context, logger runtime.Logger, _ *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, _ int64, rawState interface{}, presences []runtime.Presence) interface{} {
+func (m *Match) MatchJoin(ctx context.Context, logger runtime.Logger, _ *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, rawState interface{}, presences []runtime.Presence) interface{} {
 	state := rawState.(*State)
+	playerCount := len(state.Players)
 	displayNames, err := resolveDisplayNames(ctx, nk, presences)
 	if err != nil && logger != nil {
 		logger.Error("Could not load player display names: %v", err)
@@ -93,6 +94,9 @@ func (m *Match) MatchJoin(ctx context.Context, logger runtime.Logger, _ *sql.DB,
 	}
 	state.EmptyTicks = 0
 	state.updateLabel(dispatcher)
+	if len(state.Players) != playerCount {
+		state.broadcastSnapshot(logger, dispatcher, tick)
+	}
 	return state
 }
 
@@ -123,13 +127,17 @@ func resolveDisplayNames(ctx context.Context, lookup userLookup, presences []run
 	return displayNames, nil
 }
 
-func (m *Match) MatchLeave(_ context.Context, _ runtime.Logger, _ *sql.DB, _ runtime.NakamaModule, dispatcher runtime.MatchDispatcher, _ int64, rawState interface{}, presences []runtime.Presence) interface{} {
+func (m *Match) MatchLeave(_ context.Context, logger runtime.Logger, _ *sql.DB, _ runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, rawState interface{}, presences []runtime.Presence) interface{} {
 	state := rawState.(*State)
+	playerCount := len(state.Players)
 	for _, presence := range presences {
 		delete(state.Reservations, presence.GetSessionId())
 		delete(state.Players, presence.GetSessionId())
 	}
 	state.updateLabel(dispatcher)
+	if len(state.Players) != playerCount {
+		state.broadcastSnapshot(logger, dispatcher, tick)
+	}
 	return state
 }
 
@@ -156,14 +164,6 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 
 	for _, player := range state.Players {
 		core.StepMovement(player, tick)
-	}
-	if len(state.Players) > 0 {
-		snapshot, err := core.EncodeStateSnapshot(tick, len(state.Players))
-		if err != nil {
-			logger.Error("Could not encode movement snapshot: %v", err)
-		} else if err = dispatcher.BroadcastMessage(core.OpStateSnapshot, snapshot, nil, nil, false); err != nil {
-			logger.Error("Could not broadcast movement snapshot: %v", err)
-		}
 	}
 
 	if len(state.Players) == 0 && len(state.Reservations) == 0 {
@@ -205,6 +205,16 @@ func (s *State) expireReservations(tick int64) bool {
 
 func (s *State) updateLabel(dispatcher runtime.MatchDispatcher) {
 	_ = dispatcher.MatchLabelUpdate(s.label())
+}
+
+func (s *State) broadcastSnapshot(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64) {
+	snapshot, err := core.EncodeStateSnapshot(tick, len(s.Players))
+	if err == nil {
+		err = dispatcher.BroadcastMessage(core.OpStateSnapshot, snapshot, nil, nil, true)
+	}
+	if err != nil && logger != nil {
+		logger.Error("Could not broadcast state snapshot: %v", err)
+	}
 }
 
 func (s *State) label() string {

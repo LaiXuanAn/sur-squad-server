@@ -8,7 +8,7 @@ import (
 
 func TestDiagonalMovementIsNormalized(t *testing.T) {
 	player := NewPlayer("user-1", "session-1", "Player One", Vector2{})
-	if !ApplyMovementInput(player, MovementInput{X: 1, Y: 1, Sequence: 1}, 0) {
+	if !ApplyMovementInput(player, &MovementInput{X: 1, Y: 1, Sequence: 1}, 0) {
 		t.Fatal("expected movement input to be accepted")
 	}
 
@@ -23,8 +23,8 @@ func TestDiagonalMovementIsNormalized(t *testing.T) {
 
 func TestZeroInputStopsWithoutChangingFacing(t *testing.T) {
 	player := NewPlayer("user-1", "session-1", "Player One", Vector2{})
-	ApplyMovementInput(player, MovementInput{Y: 1, Sequence: 1}, 0)
-	ApplyMovementInput(player, MovementInput{Sequence: 2}, 1)
+	ApplyMovementInput(player, &MovementInput{Y: 1, Sequence: 1}, 0)
+	ApplyMovementInput(player, &MovementInput{Sequence: 2}, 1)
 	StepMovement(player, 1)
 
 	if player.Position != (Vector2{}) {
@@ -37,12 +37,12 @@ func TestZeroInputStopsWithoutChangingFacing(t *testing.T) {
 
 func TestStaleSequenceIsIgnored(t *testing.T) {
 	player := NewPlayer("user-1", "session-1", "Player One", Vector2{})
-	ApplyMovementInput(player, MovementInput{X: 1, Sequence: 5}, 0)
+	ApplyMovementInput(player, &MovementInput{X: 1, Sequence: 5}, 0)
 
-	if ApplyMovementInput(player, MovementInput{Y: 1, Sequence: 5}, 1) {
+	if ApplyMovementInput(player, &MovementInput{Y: 1, Sequence: 5}, 1) {
 		t.Fatal("expected duplicate sequence to be ignored")
 	}
-	if ApplyMovementInput(player, MovementInput{Y: 1, Sequence: 4}, 1) {
+	if ApplyMovementInput(player, &MovementInput{Y: 1, Sequence: 4}, 1) {
 		t.Fatal("expected stale sequence to be ignored")
 	}
 	if player.Direction != (Vector2{X: 1}) {
@@ -52,7 +52,7 @@ func TestStaleSequenceIsIgnored(t *testing.T) {
 
 func TestInputTimesOutAfterThreeTicks(t *testing.T) {
 	player := NewPlayer("user-1", "session-1", "Player One", Vector2{})
-	ApplyMovementInput(player, MovementInput{X: 1, Sequence: 1}, 0)
+	ApplyMovementInput(player, &MovementInput{X: 1, Sequence: 1}, 0)
 
 	for tick := int64(0); tick <= InputTimeoutTicks; tick++ {
 		StepMovement(player, tick)
@@ -67,7 +67,7 @@ func TestInputTimesOutAfterThreeTicks(t *testing.T) {
 
 func TestMovementCannotLeavePlayArea(t *testing.T) {
 	player := NewPlayer("user-1", "session-1", "Player One", Vector2{X: 9.9})
-	ApplyMovementInput(player, MovementInput{X: 1, Sequence: 1}, 0)
+	ApplyMovementInput(player, &MovementInput{X: 1, Sequence: 1}, 0)
 	StepMovement(player, 0)
 
 	if !almostEqual(math.Hypot(player.Position.X, player.Position.Y), PlayAreaRadius) {

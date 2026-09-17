@@ -5,6 +5,7 @@ import (
 	"math/rand"
 )
 
+// Thiết lập map
 const (
 	MoveSpeed         = 5.0
 	PlayAreaRadius    = 10.0
@@ -40,7 +41,7 @@ func NewPlayer(userID, sessionID, displayName string, position Vector2) *Player 
 	}
 }
 
-func ApplyMovementInput(player *Player, input MovementInput, tick int64) bool {
+func ApplyMovementInput(player *Player, input *MovementInput, tick int64) bool {
 	if player.HasSequence && input.Sequence <= player.LastSequence {
 		return false
 	}
