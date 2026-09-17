@@ -1,4 +1,10 @@
-.git
-.gitignore
-.env
-backend.so
+**
+
+!Dockerfile
+!go.mod
+!go.sum
+!main.go
+!modules/
+!modules/**
+
+**/*_test.go
