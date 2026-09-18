@@ -1,0 +1,74 @@
+package entity
+
+import "math/rand"
+
+const (
+	DefaultHealth      = 100.0
+	DefaultDamage      = 10.0
+	DefaultAttackSpeed = 1.2
+	DefaultRegenRate   = 0.0
+	DefaultDamageRatio = 1.1
+)
+
+type Character struct {
+	Weapon      Weapon
+	Health      float64
+	Damage      float64
+	MoveSpeed   float64 // World units per second.
+	AttackSpeed float64
+	AttackRange float64
+	RegenRate   float64
+	DamageRatio float64
+}
+
+func CreateCharacter(random *rand.Rand, weapons []Weapon) *Character {
+	character := NewCharacter()
+	character.ApplyWeapon(RandomWeapon(random, weapons))
+	return character
+}
+
+func (c *Character) ApplyWeapon(weapon Weapon) {
+	c.Weapon = weapon
+	c.Health = weapon.Health
+	c.Damage = weapon.Damage
+	c.MoveSpeed = weapon.MoveSpeed
+	c.AttackSpeed = weapon.AttackSpeed
+	c.AttackRange = weapon.AttackRange
+	c.RegenRate = weapon.RegenRate
+	c.DamageRatio = weapon.DamageRatio
+}
+
+func NewCharacter() *Character {
+	return &Character{
+		Health:      DefaultHealth,
+		Damage:      DefaultDamage,
+		MoveSpeed:   MoveSpeed,
+		AttackSpeed: DefaultAttackSpeed,
+		RegenRate:   DefaultRegenRate,
+		DamageRatio: DefaultDamageRatio,
+	}
+}
+
+// DamageRange returns the symmetric damage range represented by a multiplier.
+// For example, damage 10 with ratio 1.1 produces a range from 9 to 11.
+func (c Character) DamageRange() (float64, float64) {
+	ratio := c.DamageRatio
+	if ratio < 1 {
+		ratio = 1
+	}
+
+	spread := c.Damage * (ratio - 1)
+	minimum := c.Damage - spread
+	if minimum < 0 {
+		minimum = 0
+	}
+	return minimum, c.Damage + spread
+}
+
+func (c Character) RollDamage(random *rand.Rand) float64 {
+	minimum, maximum := c.DamageRange()
+	if minimum == maximum {
+		return minimum
+	}
+	return minimum + random.Float64()*(maximum-minimum)
+}

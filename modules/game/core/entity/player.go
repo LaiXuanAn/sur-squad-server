@@ -7,9 +7,9 @@ import (
 
 // Thiết lập map
 const (
-	MoveSpeed         = 5.0
-	PlayAreaRadius    = 10.0
-	SpawnRadius       = 10.0
+	MoveSpeed         = 5.0 // World units per second; converted to distance per tick in StepMovement.
+	PlayAreaRadius    = 200.0
+	SpawnRadius       = 80.0
 	InputTimeoutTicks = int64(3)
 	TickRate          = 10
 )
@@ -29,6 +29,7 @@ type Player struct {
 	LastSequence  uint64
 	HasSequence   bool
 	LastInputTick int64
+	Character     *Character
 }
 
 func NewPlayer(userID, sessionID, displayName string, position Vector2) *Player {
@@ -38,6 +39,7 @@ func NewPlayer(userID, sessionID, displayName string, position Vector2) *Player 
 		DisplayName: displayName,
 		Position:    ClampToPlayArea(position),
 		Facing:      Vector2{X: 1},
+		Character:   NewCharacter(),
 	}
 }
 
@@ -66,8 +68,12 @@ func StepMovement(player *Player, tick int64) {
 	}
 
 	deltaSeconds := 1.0 / float64(TickRate)
-	player.Position.X += player.Direction.X * MoveSpeed * deltaSeconds
-	player.Position.Y += player.Direction.Y * MoveSpeed * deltaSeconds
+	moveSpeed := MoveSpeed
+	if player.Character != nil {
+		moveSpeed = player.Character.MoveSpeed
+	}
+	player.Position.X += player.Direction.X * moveSpeed * deltaSeconds
+	player.Position.Y += player.Direction.Y * moveSpeed * deltaSeconds
 	player.Position = ClampToPlayArea(player.Position)
 }
 
