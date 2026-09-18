@@ -173,6 +173,37 @@ func TestMatchLoopAppliesMovementWithoutBroadcastingSnapshot(t *testing.T) {
 	}
 }
 
+func TestMatchLoopRemovesDeadCharacterBeforeMovement(t *testing.T) {
+	match := &Match{}
+	dispatcher := &testDispatcher{}
+	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{}, rand.New(rand.NewSource(1)))
+	player.Characters[0].Health = 0
+	grid := spatial.NewGrid(spatialCellSize)
+	if err := grid.Insert(player); err != nil {
+		t.Fatal(err)
+	}
+	state := &State{
+		Mode:                DefaultMode,
+		AllowJoinInProgress: true,
+		Players:             map[string]*entity.Player{player.SessionID: player},
+		Reservations:        make(map[string]int64),
+		SpatialGrid:         grid,
+	}
+	message := testMatchData{
+		testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID},
+		opCode:       system.OpMovementInput,
+		data:         mustMarshalMovementInput(t, &entity.MovementInput{X: 1, Sequence: 1}),
+	}
+
+	match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, []runtime.MatchData{message})
+	if len(player.Characters) != 0 {
+		t.Fatalf("expected dead character removed, got %d characters", len(player.Characters))
+	}
+	if player.Position != (entity.Vector2{}) {
+		t.Fatalf("player moved without living characters: %+v", player.Position)
+	}
+}
+
 func TestMatchLoopMovesPlayerBetweenSpatialCells(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
@@ -243,7 +274,12 @@ func TestMatchLoopSendsPersonalizedDetectionSnapshots(t *testing.T) {
 		SpatialGrid:  grid,
 	}
 
-	match.MatchLoop(nil, nil, nil, nil, dispatcher, 9, state, nil)
+	movement := testMatchData{
+		testPresence: testPresence{userID: playerA.UserID, sessionID: playerA.SessionID},
+		opCode:       system.OpMovementInput,
+		data:         mustMarshalMovementInput(t, &entity.MovementInput{X: 1, Sequence: 1}),
+	}
+	match.MatchLoop(nil, nil, nil, nil, dispatcher, 9, state, []runtime.MatchData{movement})
 	if len(dispatcher.broadcasts) != 3 {
 		t.Fatalf("expected one detection snapshot per player, got %d", len(dispatcher.broadcasts))
 	}
@@ -274,6 +310,12 @@ func TestMatchLoopSendsPersonalizedDetectionSnapshots(t *testing.T) {
 		for index, sessionID := range expected {
 			if snapshot.Players[index].SessionId != sessionID {
 				t.Fatalf("recipient %s result %d: expected %s, got %s", recipient, index, sessionID, snapshot.Players[index].SessionId)
+			}
+		}
+		if recipient == playerB.SessionID {
+			detectedA := snapshot.Players[0]
+			if detectedA.Characters[0].Position.X != playerA.Position.X {
+				t.Fatalf("character position was not updated before snapshot: character=%+v player=%+v", detectedA.Characters[0].Position, playerA.Position)
 			}
 		}
 	}

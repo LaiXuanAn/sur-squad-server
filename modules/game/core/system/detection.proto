@@ -33,4 +33,6 @@ message CharacterSnapshot {
   double regen_rate = 6;
   double damage_ratio = 7;
   string weapon_type = 8;
+  Vector2 position = 9;
+  double max_health = 10;
 }

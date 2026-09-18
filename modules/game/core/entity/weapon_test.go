@@ -37,7 +37,7 @@ func TestWeaponReplacesAllCharacterStats(t *testing.T) {
 	if character.Weapon != weapon {
 		t.Fatalf("unexpected weapon: %+v", character.Weapon)
 	}
-	if character.Health != 120 || character.Damage != 15 || character.MoveSpeed != 4 ||
+	if character.Health != 120 || character.MaxHealth != 120 || character.Damage != 15 || character.MoveSpeed != 4 ||
 		character.AttackSpeed != 0.8 || character.AttackRange != 2 ||
 		character.RegenRate != 0.5 || character.DamageRatio != 1.2 {
 		t.Fatalf("weapon stats were not fully applied: %+v", character)

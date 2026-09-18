@@ -187,7 +187,11 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 	}
 
 	for _, player := range state.Players {
+		player.RemoveDeadCharacters()
 		entity.StepMovement(player, tick)
+		if err := entity.StepCharacters(player); err != nil && logger != nil {
+			logger.Error("Could not update character strategy: session_id=%s error=%v", player.SessionID, err)
+		}
 		if err := state.SpatialGrid.Move(player); err != nil && logger != nil {
 			logger.Error("Could not move player in spatial grid: session_id=%s error=%v", player.SessionID, err)
 		}

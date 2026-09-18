@@ -45,11 +45,14 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	}
 	character := detected.Characters[0]
 	source := player.Characters[0]
-	if character.Health != source.Health || character.Damage != source.Damage ||
+	if character.Health != source.Health || character.MaxHealth != source.MaxHealth || character.Damage != source.Damage ||
 		character.MoveSpeed != source.MoveSpeed || character.AttackSpeed != source.AttackSpeed ||
 		character.AttackRange != source.AttackRange || character.RegenRate != source.RegenRate ||
 		character.DamageRatio != source.DamageRatio || character.WeaponType != string(source.Weapon.Type) {
 		t.Fatalf("unexpected character snapshot: %+v", character)
+	}
+	if character.Position.X != source.Position.X || character.Position.Y != source.Position.Y {
+		t.Fatalf("unexpected character position: %+v", character.Position)
 	}
 }
 

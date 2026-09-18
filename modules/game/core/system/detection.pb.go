@@ -227,6 +227,8 @@ type CharacterSnapshot struct {
 	RegenRate     float64                `protobuf:"fixed64,6,opt,name=regen_rate,json=regenRate,proto3" json:"regen_rate,omitempty"`
 	DamageRatio   float64                `protobuf:"fixed64,7,opt,name=damage_ratio,json=damageRatio,proto3" json:"damage_ratio,omitempty"`
 	WeaponType    string                 `protobuf:"bytes,8,opt,name=weapon_type,json=weaponType,proto3" json:"weapon_type,omitempty"`
+	Position      *Vector2               `protobuf:"bytes,9,opt,name=position,proto3" json:"position,omitempty"`
+	MaxHealth     float64                `protobuf:"fixed64,10,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -317,6 +319,20 @@ func (x *CharacterSnapshot) GetWeaponType() string {
 	return ""
 }
 
+func (x *CharacterSnapshot) GetPosition() *Vector2 {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *CharacterSnapshot) GetMaxHealth() float64 {
+	if x != nil {
+		return x.MaxHealth
+	}
+	return 0
+}
+
 var File_modules_game_core_system_detection_proto protoreflect.FileDescriptor
 
 const file_modules_game_core_system_detection_proto_rawDesc = "" +
@@ -338,7 +354,7 @@ const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"characters\"%\n" +
 	"\aVector2\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x01R\x01y\"\x8b\x02\n" +
+	"\x01y\x18\x02 \x01(\x01R\x01y\"\xe1\x02\n" +
 	"\x11CharacterSnapshot\x12\x16\n" +
 	"\x06health\x18\x01 \x01(\x01R\x06health\x12\x16\n" +
 	"\x06damage\x18\x02 \x01(\x01R\x06damage\x12\x1d\n" +
@@ -350,7 +366,11 @@ const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"regen_rate\x18\x06 \x01(\x01R\tregenRate\x12!\n" +
 	"\fdamage_ratio\x18\a \x01(\x01R\vdamageRatio\x12\x1f\n" +
 	"\vweapon_type\x18\b \x01(\tR\n" +
-	"weaponTypeB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
+	"weaponType\x125\n" +
+	"\bposition\x18\t \x01(\v2\x19.game.core.system.Vector2R\bposition\x12\x1d\n" +
+	"\n" +
+	"max_health\x18\n" +
+	" \x01(\x01R\tmaxHealthB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
 
 var (
 	file_modules_game_core_system_detection_proto_rawDescOnce sync.Once
@@ -377,11 +397,12 @@ var file_modules_game_core_system_detection_proto_depIdxs = []int32{
 	2, // 2: game.core.system.DetectedPlayer.facing:type_name -> game.core.system.Vector2
 	2, // 3: game.core.system.DetectedPlayer.direction:type_name -> game.core.system.Vector2
 	3, // 4: game.core.system.DetectedPlayer.characters:type_name -> game.core.system.CharacterSnapshot
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2, // 5: game.core.system.CharacterSnapshot.position:type_name -> game.core.system.Vector2
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_modules_game_core_system_detection_proto_init() }

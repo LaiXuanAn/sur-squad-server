@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 
+	"squad-survival-be/modules/game/core/strategy"
 	"squad-survival-be/modules/game/core/world"
 )
 
@@ -27,10 +28,15 @@ type Player struct {
 	LastInputTick   int64
 	Characters      []*Character
 	DetectionRadius float64
+	Strategy        strategy.Definition
 }
 
 func NewPlayer(userID, sessionID, displayName string, position Vector2, random *rand.Rand) *Player {
-	return &Player{
+	definition, ok := strategy.DefaultDefinition(strategy.Compact)
+	if !ok {
+		panic("default compact strategy not found")
+	}
+	player := &Player{
 		UserID:          userID,
 		SessionID:       sessionID,
 		DisplayName:     displayName,
@@ -38,7 +44,17 @@ func NewPlayer(userID, sessionID, displayName string, position Vector2, random *
 		Facing:          Vector2{X: 1},
 		Characters:      []*Character{CreateCharacter(random, DefaultWeaponCatalog())},
 		DetectionRadius: DefaultDetectionRadius,
+		Strategy:        definition,
 	}
+	if err := AssignCharacterTargets(player); err != nil {
+		panic("could not initialize player strategy: " + err.Error())
+	}
+	for _, character := range player.Characters {
+		if character != nil {
+			character.Position = character.TargetPosition
+		}
+	}
+	return player
 }
 
 func ApplyMovementInput(player *Player, input *MovementInput, tick int64) bool {

@@ -8,7 +8,7 @@ import (
 func TestNewCharacterUsesDefaultStats(t *testing.T) {
 	character := NewCharacter()
 
-	if character.Health != 100 || character.Damage != 10 || character.MoveSpeed != 5 {
+	if character.Health != 100 || character.MaxHealth != 100 || character.Damage != 10 || character.MoveSpeed != 5 {
 		t.Fatalf("unexpected base stats: %+v", character)
 	}
 	if character.AttackSpeed != 1.2 || character.AttackRange != 0 {

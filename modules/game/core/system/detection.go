@@ -23,6 +23,7 @@ func EncodePlayerDetectionSnapshot(tick int64, players []*entity.Player) ([]byte
 			}
 			characters = append(characters, &CharacterSnapshot{
 				Health:      character.Health,
+				MaxHealth:   character.MaxHealth,
 				Damage:      character.Damage,
 				MoveSpeed:   character.MoveSpeed,
 				AttackSpeed: character.AttackSpeed,
@@ -30,6 +31,7 @@ func EncodePlayerDetectionSnapshot(tick int64, players []*entity.Player) ([]byte
 				RegenRate:   character.RegenRate,
 				DamageRatio: character.DamageRatio,
 				WeaponType:  string(character.Weapon.Type),
+				Position:    vectorSnapshot(character.Position),
 			})
 		}
 
