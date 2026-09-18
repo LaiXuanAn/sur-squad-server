@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package game.core;
+package game.core.entity;
 
-option go_package = "squad-survival-be/modules/game/core;core";
+option go_package = "squad-survival-be/modules/game/core/entity;entity";
 
 message MovementInput {
   double x = 1;

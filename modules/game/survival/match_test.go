@@ -7,7 +7,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"squad-survival-be/modules/game/core"
+	"squad-survival-be/modules/game/core/entity"
+	"squad-survival-be/modules/game/core/system"
 
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/runtime"
@@ -19,7 +20,7 @@ func TestJoinAttemptReservesAndExpiresSlot(t *testing.T) {
 	state := &State{
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
-		Players:             make(map[string]*core.Player),
+		Players:             make(map[string]*entity.Player),
 		Reservations:        make(map[string]int64),
 	}
 	for i := 0; i < MaxPlayers; i++ {
@@ -49,7 +50,7 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 	state := &State{
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
-		Players:             make(map[string]*core.Player),
+		Players:             make(map[string]*entity.Player),
 		Reservations:        map[string]int64{presence.sessionID: 100},
 		random:              rand.New(rand.NewSource(1)),
 	}
@@ -98,23 +99,23 @@ func TestResolveDisplayNamesUsesProfileAndUsernameFallback(t *testing.T) {
 func TestMatchLoopIgnoresInvalidMessagesWithoutBroadcastingSnapshot(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
-	player := core.NewPlayer("user-1", "session-1", "Player One", core.Vector2{})
+	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{})
 	state := &State{
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
-		Players:             map[string]*core.Player{player.SessionID: player},
+		Players:             map[string]*entity.Player{player.SessionID: player},
 		Reservations:        make(map[string]int64),
 	}
 	messages := []runtime.MatchData{
 		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: 999, data: []byte(`{}`)},
-		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: core.OpMovementInput, data: []byte{0x0a, 0x01}},
+		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: system.OpMovementInput, data: []byte{0x0a, 0x01}},
 	}
 
 	result := match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, messages)
 	if result == nil {
 		t.Fatal("invalid messages must not stop the match")
 	}
-	if player.Position != (core.Vector2{}) {
+	if player.Position != (entity.Vector2{}) {
 		t.Fatalf("invalid messages changed position: %+v", player.Position)
 	}
 	if dispatcher.broadcastCount != 0 {
@@ -125,21 +126,21 @@ func TestMatchLoopIgnoresInvalidMessagesWithoutBroadcastingSnapshot(t *testing.T
 func TestMatchLoopAppliesMovementWithoutBroadcastingSnapshot(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
-	player := core.NewPlayer("user-1", "session-1", "Player One", core.Vector2{})
+	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{})
 	state := &State{
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
-		Players:             map[string]*core.Player{player.SessionID: player},
+		Players:             map[string]*entity.Player{player.SessionID: player},
 		Reservations:        make(map[string]int64),
 	}
 	message := testMatchData{
 		testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID},
-		opCode:       core.OpMovementInput,
-		data:         mustMarshalMovementInput(t, &core.MovementInput{X: 1, Sequence: 1}),
+		opCode:       system.OpMovementInput,
+		data:         mustMarshalMovementInput(t, &entity.MovementInput{X: 1, Sequence: 1}),
 	}
 
 	match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, []runtime.MatchData{message})
-	if player.Position != (core.Vector2{X: 0.5}) {
+	if player.Position != (entity.Vector2{X: 0.5}) {
 		t.Fatalf("unexpected player position: %+v", player.Position)
 	}
 
@@ -148,7 +149,7 @@ func TestMatchLoopAppliesMovementWithoutBroadcastingSnapshot(t *testing.T) {
 	}
 }
 
-func mustMarshalMovementInput(t *testing.T, input *core.MovementInput) []byte {
+func mustMarshalMovementInput(t *testing.T, input *entity.MovementInput) []byte {
 	t.Helper()
 	data, err := proto.Marshal(input)
 	if err != nil {
@@ -159,11 +160,11 @@ func mustMarshalMovementInput(t *testing.T, input *core.MovementInput) []byte {
 
 func assertStateSnapshot(t *testing.T, dispatcher *testDispatcher, tick int64, playerCount int) {
 	t.Helper()
-	if dispatcher.broadcastOpCode != core.OpStateSnapshot || !dispatcher.broadcastReliable {
+	if dispatcher.broadcastOpCode != system.OpStateSnapshot || !dispatcher.broadcastReliable {
 		t.Fatalf("unexpected broadcast: opcode=%d reliable=%v", dispatcher.broadcastOpCode, dispatcher.broadcastReliable)
 	}
 
-	var snapshot core.StateSnapshot
+	var snapshot system.StateSnapshot
 	if err := json.Unmarshal(dispatcher.broadcastData, &snapshot); err != nil {
 		t.Fatal(err)
 	}

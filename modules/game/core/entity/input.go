@@ -1,4 +1,4 @@
-package core
+package entity
 
 import "google.golang.org/protobuf/proto"
 

@@ -1,4 +1,4 @@
-package core
+package system
 
 const (
 	OpMovementInput int64 = 1

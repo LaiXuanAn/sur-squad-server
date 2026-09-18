@@ -7,7 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"squad-survival-be/modules/game/core"
+	"squad-survival-be/modules/game/core/entity"
+	"squad-survival-be/modules/game/core/system"
 
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/runtime"
@@ -18,7 +19,7 @@ const (
 	ModuleName            = "survival"
 	DefaultMode           = "survival"
 	MaxPlayers            = 32
-	tickRate              = core.TickRate
+	tickRate              = entity.TickRate
 	reservationTTLSeconds = 10
 	emptyMatchTTLSeconds  = 60
 )
@@ -28,7 +29,7 @@ type Match struct{}
 type State struct {
 	Mode                string
 	AllowJoinInProgress bool
-	Players             map[string]*core.Player
+	Players             map[string]*entity.Player
 	Reservations        map[string]int64
 	EmptyTicks          int64
 	random              *rand.Rand
@@ -50,7 +51,7 @@ func (m *Match) MatchInit(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 	state := &State{
 		Mode:                stringParam(params, "mode", DefaultMode),
 		AllowJoinInProgress: boolParam(params, "allow_join_in_progress", true),
-		Players:             make(map[string]*core.Player),
+		Players:             make(map[string]*entity.Player),
 		Reservations:        make(map[string]int64),
 		random:              rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
@@ -85,11 +86,11 @@ func (m *Match) MatchJoin(ctx context.Context, logger runtime.Logger, _ *sql.DB,
 	}
 	for _, presence := range presences {
 		delete(state.Reservations, presence.GetSessionId())
-		state.Players[presence.GetSessionId()] = core.NewPlayer(
+		state.Players[presence.GetSessionId()] = entity.NewPlayer(
 			presence.GetUserId(),
 			presence.GetSessionId(),
 			displayNames[presence.GetUserId()],
-			core.RandomSpawn(state.random),
+			entity.RandomSpawn(state.random),
 		)
 	}
 	state.EmptyTicks = 0
@@ -148,22 +149,22 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 	}
 
 	for _, message := range messages {
-		if message.GetOpCode() != core.OpMovementInput {
+		if message.GetOpCode() != system.OpMovementInput {
 			continue
 		}
 		player, ok := state.Players[message.GetSessionId()]
 		if !ok {
 			continue
 		}
-		input, err := core.DecodeMovementInput(message.GetData())
+		input, err := entity.DecodeMovementInput(message.GetData())
 		if err != nil {
 			continue
 		}
-		core.ApplyMovementInput(player, input, tick)
+		entity.ApplyMovementInput(player, input, tick)
 	}
 
 	for _, player := range state.Players {
-		core.StepMovement(player, tick)
+		entity.StepMovement(player, tick)
 	}
 
 	if len(state.Players) == 0 && len(state.Reservations) == 0 {
@@ -208,9 +209,9 @@ func (s *State) updateLabel(dispatcher runtime.MatchDispatcher) {
 }
 
 func (s *State) broadcastSnapshot(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64) {
-	snapshot, err := core.EncodeStateSnapshot(tick, len(s.Players))
+	snapshot, err := system.EncodeStateSnapshot(tick, len(s.Players))
 	if err == nil {
-		err = dispatcher.BroadcastMessage(core.OpStateSnapshot, snapshot, nil, nil, true)
+		err = dispatcher.BroadcastMessage(system.OpStateSnapshot, snapshot, nil, nil, true)
 	}
 	if err != nil && logger != nil {
 		logger.Error("Could not broadcast state snapshot: %v", err)
