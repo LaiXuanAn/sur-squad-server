@@ -2,6 +2,7 @@
   "weapons": [
     {
       "type": "dagger",
+      "range_class": "melee",
       "health": 90,
       "damage": 8,
       "move_speed": 6.2,
@@ -12,6 +13,7 @@
     },
     {
       "type": "bow",
+      "range_class": "ranged",
       "health": 85,
       "damage": 11,
       "move_speed": 5.3,
@@ -22,6 +24,7 @@
     },
     {
       "type": "staff",
+      "range_class": "ranged",
       "health": 105,
       "damage": 13,
       "move_speed": 4.6,
@@ -32,6 +35,7 @@
     },
     {
       "type": "spear",
+      "range_class": "medium",
       "health": 110,
       "damage": 12,
       "move_speed": 4.9,
@@ -42,6 +46,7 @@
     },
     {
       "type": "sword",
+      "range_class": "melee",
       "health": 115,
       "damage": 11,
       "move_speed": 5,
@@ -52,6 +57,7 @@
     },
     {
       "type": "wand",
+      "range_class": "ranged",
       "health": 80,
       "damage": 15,
       "move_speed": 5.1,
@@ -62,6 +68,7 @@
     },
     {
       "type": "axe",
+      "range_class": "melee",
       "health": 125,
       "damage": 16,
       "move_speed": 4.2,
@@ -72,6 +79,7 @@
     },
     {
       "type": "blunt",
+      "range_class": "melee",
       "health": 135,
       "damage": 14,
       "move_speed": 3.9,

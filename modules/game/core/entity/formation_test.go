@@ -16,31 +16,31 @@ func TestNewPlayerSnapsCharacterToCenterSlot(t *testing.T) {
 	}
 }
 
-func TestAssignCharacterTargetsPrioritizesAttackRange(t *testing.T) {
+func TestAssignCharacterTargetsPrioritizesRangeClass(t *testing.T) {
 	player := newTestPlayer(Vector2{})
-	low := &Character{AttackRange: 1, MoveSpeed: 5}
-	high := &Character{AttackRange: 10, MoveSpeed: 5}
-	mid := &Character{AttackRange: 5, MoveSpeed: 5}
-	player.Characters = []*Character{low, high, mid}
+	melee := &Character{RangeClass: RangeMelee, AttackRange: 100, MoveSpeed: 5}
+	ranged := &Character{RangeClass: RangeRanged, AttackRange: 1, MoveSpeed: 5}
+	medium := &Character{RangeClass: RangeMedium, AttackRange: 50, MoveSpeed: 5}
+	player.Characters = []*Character{melee, ranged, medium}
 	if err := AssignCharacterTargets(player); err != nil {
 		t.Fatal(err)
 	}
 
-	if high.TargetPosition != (Vector2{}) {
-		t.Fatalf("expected highest range at center, got %+v", high.TargetPosition)
+	if ranged.TargetPosition != (Vector2{}) {
+		t.Fatalf("expected ranged character at center, got %+v", ranged.TargetPosition)
 	}
-	if mid.TargetPosition != (Vector2{X: strategy.SlotSpacing}) {
-		t.Fatalf("unexpected middle range target: %+v", mid.TargetPosition)
+	if medium.TargetPosition != (Vector2{X: strategy.SlotSpacing}) {
+		t.Fatalf("unexpected medium character target: %+v", medium.TargetPosition)
 	}
-	if low.TargetPosition != (Vector2{Y: strategy.SlotSpacing}) {
-		t.Fatalf("unexpected lowest range target: %+v", low.TargetPosition)
+	if melee.TargetPosition != (Vector2{Y: strategy.SlotSpacing}) {
+		t.Fatalf("unexpected melee character target: %+v", melee.TargetPosition)
 	}
 }
 
-func TestEqualAttackRangeKeepsCharacterIndexAndRotatesWithFacing(t *testing.T) {
+func TestEqualRangeClassKeepsCharacterIndexAndRotatesWithFacing(t *testing.T) {
 	player := newTestPlayer(Vector2{})
-	first := &Character{AttackRange: 5, MoveSpeed: 5}
-	second := &Character{AttackRange: 5, MoveSpeed: 5}
+	first := &Character{RangeClass: RangeRanged, AttackRange: 1, MoveSpeed: 5}
+	second := &Character{RangeClass: RangeRanged, AttackRange: 10, MoveSpeed: 5}
 	player.Characters = []*Character{first, second}
 	player.Facing = Vector2{Y: 1}
 	if err := AssignCharacterTargets(player); err != nil {
@@ -48,7 +48,7 @@ func TestEqualAttackRangeKeepsCharacterIndexAndRotatesWithFacing(t *testing.T) {
 	}
 
 	if first.TargetPosition != (Vector2{}) {
-		t.Fatalf("expected first equal-range character at center, got %+v", first.TargetPosition)
+		t.Fatalf("expected first ranged character at center, got %+v", first.TargetPosition)
 	}
 	if second.TargetPosition != (Vector2{Y: strategy.SlotSpacing}) {
 		t.Fatalf("expected formation to rotate with facing, got %+v", second.TargetPosition)

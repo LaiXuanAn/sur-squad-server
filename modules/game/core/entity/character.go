@@ -13,6 +13,7 @@ const (
 
 type Character struct {
 	Weapon         Weapon
+	RangeClass     RangeClass
 	Position       Vector2
 	TargetPosition Vector2
 	Health         float64
@@ -33,6 +34,7 @@ func CreateCharacter(random *rand.Rand, weapons []Weapon) *Character {
 
 func (c *Character) ApplyWeapon(weapon Weapon) {
 	c.Weapon = weapon
+	c.RangeClass = weapon.RangeClass
 	c.MaxHealth = weapon.Health
 	c.Health = c.MaxHealth
 	c.Damage = weapon.Damage

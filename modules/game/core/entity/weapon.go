@@ -9,6 +9,8 @@ import (
 
 type WeaponType string
 
+type RangeClass string
+
 const (
 	WeaponDagger WeaponType = "dagger"
 	WeaponBow    WeaponType = "bow"
@@ -20,8 +22,15 @@ const (
 	WeaponBlunt  WeaponType = "blunt"
 )
 
+const (
+	RangeMelee  RangeClass = "melee"
+	RangeMedium RangeClass = "medium"
+	RangeRanged RangeClass = "ranged"
+)
+
 type Weapon struct {
 	Type        WeaponType `json:"type"`
+	RangeClass  RangeClass `json:"range_class"`
 	Health      float64    `json:"health"`
 	Damage      float64    `json:"damage"`
 	MoveSpeed   float64    `json:"move_speed"` // World units per second.
@@ -50,8 +59,15 @@ func ParseWeaponCatalog(data []byte) ([]Weapon, error) {
 		if weapon.Type == "" {
 			return nil, errors.New("weapon type is required")
 		}
+		if !weapon.RangeClass.Valid() {
+			return nil, errors.New("weapon range class must be melee, medium, or ranged")
+		}
 	}
 	return catalog.Weapons, nil
+}
+
+func (r RangeClass) Valid() bool {
+	return r == RangeMelee || r == RangeMedium || r == RangeRanged
 }
 
 func DefaultWeaponCatalog() []Weapon {

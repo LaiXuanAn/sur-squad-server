@@ -107,6 +107,16 @@ func (p *Player) MinMoveSpeed() float64 {
 	return minimum
 }
 
+func (p *Player) CharactersByRangeClass(rangeClass RangeClass) []*Character {
+	characters := make([]*Character, 0)
+	for _, character := range p.Characters {
+		if character != nil && character.RangeClass == rangeClass {
+			characters = append(characters, character)
+		}
+	}
+	return characters
+}
+
 func NormalizeDirection(direction Vector2) Vector2 {
 	lengthSquared := direction.X*direction.X + direction.Y*direction.Y
 	if lengthSquared == 0 || lengthSquared <= 1 {

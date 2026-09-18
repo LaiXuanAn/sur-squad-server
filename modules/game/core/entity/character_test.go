@@ -66,3 +66,17 @@ func TestCharacterRollDamageWithoutRatioIsFixed(t *testing.T) {
 		t.Fatalf("expected fixed damage 10, got %f", damage)
 	}
 }
+
+func TestCharactersByRangeClass(t *testing.T) {
+	melee := &Character{RangeClass: RangeMelee}
+	ranged := &Character{RangeClass: RangeRanged}
+	player := &Player{Characters: []*Character{melee, nil, ranged}}
+
+	got := player.CharactersByRangeClass(RangeMelee)
+	if len(got) != 1 || got[0] != melee {
+		t.Fatalf("unexpected melee characters: %+v", got)
+	}
+	if got := player.CharactersByRangeClass(RangeMedium); len(got) != 0 {
+		t.Fatalf("expected no medium characters, got %+v", got)
+	}
+}

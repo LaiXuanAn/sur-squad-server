@@ -109,7 +109,7 @@ func AssignCharacterTargets(player *Player) error {
 		return ErrStrategyCapacity
 	}
 	sort.SliceStable(characters, func(i, j int) bool {
-		return characters[i].character.AttackRange > characters[j].character.AttackRange
+		return rangeClassPriority(characters[i].character.RangeClass) < rangeClassPriority(characters[j].character.RangeClass)
 	})
 
 	facing := NormalizeDirection(player.Facing)
@@ -126,6 +126,19 @@ func AssignCharacterTargets(player *Player) error {
 		item.character.TargetPosition = world.ClampToPlayArea(target)
 	}
 	return nil
+}
+
+func rangeClassPriority(rangeClass RangeClass) int {
+	switch rangeClass {
+	case RangeRanged:
+		return 0
+	case RangeMedium:
+		return 1
+	case RangeMelee:
+		return 2
+	default:
+		return 3
+	}
 }
 
 func StepCharacters(player *Player) error {
