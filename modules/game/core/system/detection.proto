@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package game.core.system;
+
+option go_package = "squad-survival-be/modules/game/core/system;system";
+
+message PlayerDetectionSnapshot {
+  int64 tick = 1;
+  repeated DetectedPlayer players = 2;
+}
+
+message DetectedPlayer {
+  string user_id = 1;
+  string session_id = 2;
+  string display_name = 3;
+  Vector2 position = 4;
+  Vector2 facing = 5;
+  Vector2 direction = 6;
+  repeated CharacterSnapshot characters = 7;
+}
+
+message Vector2 {
+  double x = 1;
+  double y = 2;
+}
+
+message CharacterSnapshot {
+  double health = 1;
+  double damage = 2;
+  double move_speed = 3;
+  double attack_speed = 4;
+  double attack_range = 5;
+  double regen_rate = 6;
+  double damage_ratio = 7;
+  string weapon_type = 8;
+}

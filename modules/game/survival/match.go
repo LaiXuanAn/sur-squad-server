@@ -33,6 +33,7 @@ type State struct {
 	Mode                string
 	AllowJoinInProgress bool
 	Players             map[string]*entity.Player
+	Presences           map[string]runtime.Presence
 	Reservations        map[string]int64
 	SpatialGrid         *spatial.Grid
 	EmptyTicks          int64
@@ -56,6 +57,7 @@ func (m *Match) MatchInit(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 		Mode:                stringParam(params, "mode", DefaultMode),
 		AllowJoinInProgress: boolParam(params, "allow_join_in_progress", true),
 		Players:             make(map[string]*entity.Player),
+		Presences:           make(map[string]runtime.Presence),
 		Reservations:        make(map[string]int64),
 		SpatialGrid:         spatial.NewGrid(spatialCellSize),
 		random:              rand.New(rand.NewSource(time.Now().UnixNano())),
@@ -108,6 +110,7 @@ func (m *Match) MatchJoin(ctx context.Context, logger runtime.Logger, _ *sql.DB,
 			continue
 		}
 		state.Players[presence.GetSessionId()] = player
+		state.Presences[presence.GetSessionId()] = presence
 	}
 	state.EmptyTicks = 0
 	state.updateLabel(dispatcher)
@@ -153,6 +156,7 @@ func (m *Match) MatchLeave(_ context.Context, logger runtime.Logger, _ *sql.DB, 
 			logger.Error("Could not remove player from spatial grid: session_id=%s", presence.GetSessionId())
 		}
 		delete(state.Players, presence.GetSessionId())
+		delete(state.Presences, presence.GetSessionId())
 	}
 	state.updateLabel(dispatcher)
 	if len(state.Players) != playerCount {
@@ -188,6 +192,7 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 			logger.Error("Could not move player in spatial grid: session_id=%s error=%v", player.SessionID, err)
 		}
 	}
+	state.broadcastDetectionSnapshots(logger, dispatcher, tick)
 
 	if len(state.Players) == 0 && len(state.Reservations) == 0 {
 		state.EmptyTicks++
@@ -237,6 +242,26 @@ func (s *State) broadcastSnapshot(logger runtime.Logger, dispatcher runtime.Matc
 	}
 	if err != nil && logger != nil {
 		logger.Error("Could not broadcast state snapshot: %v", err)
+	}
+}
+
+func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64) {
+	for sessionID, player := range s.Players {
+		presence, ok := s.Presences[sessionID]
+		if !ok {
+			if logger != nil {
+				logger.Error("Could not send detection snapshot: presence not found for session_id=%s", sessionID)
+			}
+			continue
+		}
+
+		payload, err := system.EncodePlayerDetectionSnapshot(tick, s.SpatialGrid.QueryPlayers(player))
+		if err == nil {
+			err = dispatcher.BroadcastMessage(system.OpPlayerDetectionSnapshot, payload, []runtime.Presence{presence}, nil, false)
+		}
+		if err != nil && logger != nil {
+			logger.Error("Could not send detection snapshot: session_id=%s error=%v", sessionID, err)
+		}
 	}
 }
 

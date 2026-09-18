@@ -52,6 +52,7 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
 		Players:             make(map[string]*entity.Player),
+		Presences:           make(map[string]runtime.Presence),
 		Reservations:        map[string]int64{presence.sessionID: 100},
 		SpatialGrid:         spatial.NewGrid(spatialCellSize),
 		random:              rand.New(rand.NewSource(1)),
@@ -65,6 +66,9 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 		t.Fatalf("unexpected full label: %s", dispatcher.label)
 	}
 	assertStateSnapshot(t, dispatcher, 0, 1)
+	if state.Presences[presence.sessionID] == nil {
+		t.Fatal("expected joined player presence to be tracked")
+	}
 	if err := state.SpatialGrid.Insert(state.Players[presence.sessionID]); err == nil {
 		t.Fatal("expected joined player to already exist in spatial grid")
 	}
@@ -74,6 +78,9 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 		t.Fatalf("unexpected empty label: %s", dispatcher.label)
 	}
 	assertStateSnapshot(t, dispatcher, 2, 0)
+	if _, exists := state.Presences[presence.sessionID]; exists {
+		t.Fatal("expected leaving player presence to be removed")
+	}
 	if state.SpatialGrid.Remove(presence.sessionID) {
 		t.Fatal("expected leaving player to be absent from spatial grid")
 	}
@@ -205,6 +212,73 @@ func TestMatchLoopMovesPlayerBetweenSpatialCells(t *testing.T) {
 	}
 }
 
+func TestMatchLoopSendsPersonalizedDetectionSnapshots(t *testing.T) {
+	match := &Match{}
+	dispatcher := &testDispatcher{}
+	random := rand.New(rand.NewSource(1))
+	playerA := entity.NewPlayer("user-a", "session-a", "Player A", entity.Vector2{}, random)
+	playerB := entity.NewPlayer("user-b", "session-b", "Player B", entity.Vector2{X: 5}, random)
+	playerC := entity.NewPlayer("user-c", "session-c", "Player C", entity.Vector2{X: 30}, random)
+	playerB.DetectionRadius = 30
+	grid := spatial.NewGrid(spatialCellSize)
+	for _, player := range []*entity.Player{playerA, playerB, playerC} {
+		if err := grid.Insert(player); err != nil {
+			t.Fatal(err)
+		}
+	}
+	state := &State{
+		Mode:                DefaultMode,
+		AllowJoinInProgress: true,
+		Players: map[string]*entity.Player{
+			playerA.SessionID: playerA,
+			playerB.SessionID: playerB,
+			playerC.SessionID: playerC,
+		},
+		Presences: map[string]runtime.Presence{
+			playerA.SessionID: testPresence{userID: playerA.UserID, sessionID: playerA.SessionID},
+			playerB.SessionID: testPresence{userID: playerB.UserID, sessionID: playerB.SessionID},
+			playerC.SessionID: testPresence{userID: playerC.UserID, sessionID: playerC.SessionID},
+		},
+		Reservations: make(map[string]int64),
+		SpatialGrid:  grid,
+	}
+
+	match.MatchLoop(nil, nil, nil, nil, dispatcher, 9, state, nil)
+	if len(dispatcher.broadcasts) != 3 {
+		t.Fatalf("expected one detection snapshot per player, got %d", len(dispatcher.broadcasts))
+	}
+	want := map[string][]string{
+		playerA.SessionID: {playerB.SessionID},
+		playerB.SessionID: {playerA.SessionID, playerC.SessionID},
+		playerC.SessionID: {},
+	}
+	for _, broadcast := range dispatcher.broadcasts {
+		if broadcast.opCode != system.OpPlayerDetectionSnapshot || broadcast.reliable {
+			t.Fatalf("unexpected detection broadcast: opcode=%d reliable=%v", broadcast.opCode, broadcast.reliable)
+		}
+		if len(broadcast.presences) != 1 {
+			t.Fatalf("expected one recipient, got %d", len(broadcast.presences))
+		}
+		recipient := broadcast.presences[0].GetSessionId()
+		var snapshot system.PlayerDetectionSnapshot
+		if err := proto.Unmarshal(broadcast.data, &snapshot); err != nil {
+			t.Fatal(err)
+		}
+		if snapshot.Tick != 9 {
+			t.Fatalf("unexpected tick for %s: %d", recipient, snapshot.Tick)
+		}
+		expected := want[recipient]
+		if len(snapshot.Players) != len(expected) {
+			t.Fatalf("recipient %s: expected %v, got %+v", recipient, expected, snapshot.Players)
+		}
+		for index, sessionID := range expected {
+			if snapshot.Players[index].SessionId != sessionID {
+				t.Fatalf("recipient %s result %d: expected %s, got %s", recipient, index, sessionID, snapshot.Players[index].SessionId)
+			}
+		}
+	}
+}
+
 func mustMarshalMovementInput(t *testing.T, input *entity.MovementInput) []byte {
 	t.Helper()
 	data, err := proto.Marshal(input)
@@ -274,13 +348,24 @@ type testDispatcher struct {
 	broadcastData     []byte
 	broadcastReliable bool
 	broadcastCount    int
+	broadcasts        []testBroadcast
 }
 
-func (d *testDispatcher) BroadcastMessage(opCode int64, data []byte, _ []runtime.Presence, _ runtime.Presence, reliable bool) error {
+type testBroadcast struct {
+	opCode    int64
+	data      []byte
+	presences []runtime.Presence
+	reliable  bool
+}
+
+func (d *testDispatcher) BroadcastMessage(opCode int64, data []byte, presences []runtime.Presence, _ runtime.Presence, reliable bool) error {
 	d.broadcastOpCode = opCode
 	d.broadcastData = data
 	d.broadcastReliable = reliable
 	d.broadcastCount++
+	d.broadcasts = append(d.broadcasts, testBroadcast{
+		opCode: opCode, data: append([]byte(nil), data...), presences: append([]runtime.Presence(nil), presences...), reliable: reliable,
+	})
 	return nil
 }
 func (d *testDispatcher) BroadcastMessageDeferred(int64, []byte, []runtime.Presence, runtime.Presence, bool) error {
