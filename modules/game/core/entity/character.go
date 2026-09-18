@@ -5,6 +5,7 @@ import "math/rand"
 const (
 	DefaultHealth      = 100.0
 	DefaultDamage      = 10.0
+	DefaultMoveSpeed   = 5.0
 	DefaultAttackSpeed = 1.2
 	DefaultRegenRate   = 0.0
 	DefaultDamageRatio = 1.1
@@ -42,7 +43,7 @@ func NewCharacter() *Character {
 	return &Character{
 		Health:      DefaultHealth,
 		Damage:      DefaultDamage,
-		MoveSpeed:   MoveSpeed,
+		MoveSpeed:   DefaultMoveSpeed,
 		AttackSpeed: DefaultAttackSpeed,
 		RegenRate:   DefaultRegenRate,
 		DamageRatio: DefaultDamageRatio,

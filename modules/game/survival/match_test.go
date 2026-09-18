@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"squad-survival-be/modules/game/core/entity"
+	"squad-survival-be/modules/game/core/spatial"
 	"squad-survival-be/modules/game/core/system"
 
 	"github.com/heroiclabs/nakama-common/api"
@@ -52,6 +53,7 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 		AllowJoinInProgress: true,
 		Players:             make(map[string]*entity.Player),
 		Reservations:        map[string]int64{presence.sessionID: 100},
+		SpatialGrid:         spatial.NewGrid(spatialCellSize),
 		random:              rand.New(rand.NewSource(1)),
 	}
 
@@ -63,12 +65,18 @@ func TestJoinAndLeaveUpdateCapacityLabel(t *testing.T) {
 		t.Fatalf("unexpected full label: %s", dispatcher.label)
 	}
 	assertStateSnapshot(t, dispatcher, 0, 1)
+	if err := state.SpatialGrid.Insert(state.Players[presence.sessionID]); err == nil {
+		t.Fatal("expected joined player to already exist in spatial grid")
+	}
 
 	match.MatchLeave(nil, nil, nil, nil, dispatcher, 2, state, []runtime.Presence{presence})
 	if dispatcher.label != `{"mode":"survival","status":"playing","player_count":0,"max_players":32,"joinable":true}` {
 		t.Fatalf("unexpected empty label: %s", dispatcher.label)
 	}
 	assertStateSnapshot(t, dispatcher, 2, 0)
+	if state.SpatialGrid.Remove(presence.sessionID) {
+		t.Fatal("expected leaving player to be absent from spatial grid")
+	}
 	if dispatcher.broadcastCount != 2 {
 		t.Fatalf("expected one snapshot per join/leave, got %d", dispatcher.broadcastCount)
 	}
@@ -99,12 +107,16 @@ func TestResolveDisplayNamesUsesProfileAndUsernameFallback(t *testing.T) {
 func TestMatchLoopIgnoresInvalidMessagesWithoutBroadcastingSnapshot(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
-	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{})
+	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{}, rand.New(rand.NewSource(1)))
 	state := &State{
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
 		Players:             map[string]*entity.Player{player.SessionID: player},
 		Reservations:        make(map[string]int64),
+		SpatialGrid:         spatial.NewGrid(spatialCellSize),
+	}
+	if err := state.SpatialGrid.Insert(player); err != nil {
+		t.Fatal(err)
 	}
 	messages := []runtime.MatchData{
 		testMatchData{testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID}, opCode: 999, data: []byte(`{}`)},
@@ -126,12 +138,16 @@ func TestMatchLoopIgnoresInvalidMessagesWithoutBroadcastingSnapshot(t *testing.T
 func TestMatchLoopAppliesMovementWithoutBroadcastingSnapshot(t *testing.T) {
 	match := &Match{}
 	dispatcher := &testDispatcher{}
-	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{})
+	player := entity.NewPlayer("user-1", "session-1", "Player One", entity.Vector2{}, rand.New(rand.NewSource(1)))
 	state := &State{
 		Mode:                DefaultMode,
 		AllowJoinInProgress: true,
 		Players:             map[string]*entity.Player{player.SessionID: player},
 		Reservations:        make(map[string]int64),
+		SpatialGrid:         spatial.NewGrid(spatialCellSize),
+	}
+	if err := state.SpatialGrid.Insert(player); err != nil {
+		t.Fatal(err)
 	}
 	message := testMatchData{
 		testPresence: testPresence{userID: player.UserID, sessionID: player.SessionID},
@@ -140,12 +156,52 @@ func TestMatchLoopAppliesMovementWithoutBroadcastingSnapshot(t *testing.T) {
 	}
 
 	match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, []runtime.MatchData{message})
-	if player.Position != (entity.Vector2{X: 0.5}) {
+	expectedPosition := entity.Vector2{X: player.MinMoveSpeed() / float64(entity.TickRate)}
+	if player.Position != expectedPosition {
 		t.Fatalf("unexpected player position: %+v", player.Position)
 	}
 
 	if dispatcher.broadcastCount != 0 {
 		t.Fatalf("movement unexpectedly broadcast %d state snapshots", dispatcher.broadcastCount)
+	}
+}
+
+func TestMatchLoopMovesPlayerBetweenSpatialCells(t *testing.T) {
+	match := &Match{}
+	dispatcher := &testDispatcher{}
+	random := rand.New(rand.NewSource(1))
+	moving := entity.NewPlayer("moving-user", "moving", "Moving", entity.Vector2{X: 19.9}, random)
+	detector := entity.NewPlayer("detector-user", "detector", "Detector", entity.Vector2{X: 30.2}, random)
+	grid := spatial.NewGrid(spatialCellSize)
+	if err := grid.Insert(moving); err != nil {
+		t.Fatal(err)
+	}
+	if err := grid.Insert(detector); err != nil {
+		t.Fatal(err)
+	}
+	state := &State{
+		Mode:                DefaultMode,
+		AllowJoinInProgress: true,
+		Players: map[string]*entity.Player{
+			moving.SessionID:   moving,
+			detector.SessionID: detector,
+		},
+		Reservations: make(map[string]int64),
+		SpatialGrid:  grid,
+	}
+	if players := grid.QueryPlayers(detector); len(players) != 0 {
+		t.Fatalf("expected moving player outside detection radius, got %+v", players)
+	}
+	message := testMatchData{
+		testPresence: testPresence{userID: moving.UserID, sessionID: moving.SessionID},
+		opCode:       system.OpMovementInput,
+		data:         mustMarshalMovementInput(t, &entity.MovementInput{X: 1, Sequence: 1}),
+	}
+
+	match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, []runtime.MatchData{message})
+	players := grid.QueryPlayers(detector)
+	if len(players) != 1 || players[0] != moving {
+		t.Fatalf("expected moved player inside detection radius, got %+v", players)
 	}
 }
 

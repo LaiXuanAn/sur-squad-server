@@ -3,43 +3,41 @@ package entity
 import (
 	"math"
 	"math/rand"
+
+	"squad-survival-be/modules/game/core/world"
 )
 
-// Thiết lập map
 const (
-	MoveSpeed         = 5.0 // World units per second; converted to distance per tick in StepMovement.
-	PlayAreaRadius    = 200.0
-	SpawnRadius       = 80.0
-	InputTimeoutTicks = int64(3)
-	TickRate          = 10
+	InputTimeoutTicks      = int64(3)
+	TickRate               = 10
+	DefaultDetectionRadius = 10.0
 )
 
-type Vector2 struct {
-	X float64
-	Y float64
-}
+type Vector2 = world.Vector2
 
 type Player struct {
-	UserID        string
-	SessionID     string
-	DisplayName   string
-	Position      Vector2
-	Facing        Vector2
-	Direction     Vector2
-	LastSequence  uint64
-	HasSequence   bool
-	LastInputTick int64
-	Character     *Character
+	UserID          string
+	SessionID       string
+	DisplayName     string
+	Position        Vector2
+	Facing          Vector2
+	Direction       Vector2
+	LastSequence    uint64
+	HasSequence     bool
+	LastInputTick   int64
+	Characters      []*Character
+	DetectionRadius float64
 }
 
-func NewPlayer(userID, sessionID, displayName string, position Vector2) *Player {
+func NewPlayer(userID, sessionID, displayName string, position Vector2, random *rand.Rand) *Player {
 	return &Player{
-		UserID:      userID,
-		SessionID:   sessionID,
-		DisplayName: displayName,
-		Position:    ClampToPlayArea(position),
-		Facing:      Vector2{X: 1},
-		Character:   NewCharacter(),
+		UserID:          userID,
+		SessionID:       sessionID,
+		DisplayName:     displayName,
+		Position:        world.ClampToPlayArea(position),
+		Facing:          Vector2{X: 1},
+		Characters:      []*Character{CreateCharacter(random, DefaultWeaponCatalog())},
+		DetectionRadius: DefaultDetectionRadius,
 	}
 }
 
@@ -68,13 +66,29 @@ func StepMovement(player *Player, tick int64) {
 	}
 
 	deltaSeconds := 1.0 / float64(TickRate)
-	moveSpeed := MoveSpeed
-	if player.Character != nil {
-		moveSpeed = player.Character.MoveSpeed
-	}
+	moveSpeed := player.MinMoveSpeed()
 	player.Position.X += player.Direction.X * moveSpeed * deltaSeconds
 	player.Position.Y += player.Direction.Y * moveSpeed * deltaSeconds
-	player.Position = ClampToPlayArea(player.Position)
+	player.Position = world.ClampToPlayArea(player.Position)
+}
+
+func (p *Player) MinMoveSpeed() float64 {
+	minimum := math.Inf(1)
+	for _, character := range p.Characters {
+		if character == nil {
+			continue
+		}
+		if !isFinite(character.MoveSpeed) || character.MoveSpeed <= 0 {
+			return 0
+		}
+		if character.MoveSpeed < minimum {
+			minimum = character.MoveSpeed
+		}
+	}
+	if math.IsInf(minimum, 1) {
+		return 0
+	}
+	return minimum
 }
 
 func NormalizeDirection(direction Vector2) Vector2 {
@@ -85,29 +99,6 @@ func NormalizeDirection(direction Vector2) Vector2 {
 
 	length := math.Sqrt(lengthSquared)
 	return Vector2{X: direction.X / length, Y: direction.Y / length}
-}
-
-func ClampToPlayArea(position Vector2) Vector2 {
-	distanceSquared := position.X*position.X + position.Y*position.Y
-	radiusSquared := PlayAreaRadius * PlayAreaRadius
-	if distanceSquared <= radiusSquared {
-		return position
-	}
-
-	distance := math.Sqrt(distanceSquared)
-	return Vector2{
-		X: position.X / distance * PlayAreaRadius,
-		Y: position.Y / distance * PlayAreaRadius,
-	}
-}
-
-func RandomSpawn(random *rand.Rand) Vector2 {
-	angle := random.Float64() * 2 * math.Pi
-	radius := math.Sqrt(random.Float64()) * SpawnRadius
-	return Vector2{
-		X: math.Cos(angle) * radius,
-		Y: math.Sin(angle) * radius,
-	}
 }
 
 func isFinite(value float64) bool {

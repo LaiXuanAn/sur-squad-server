@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"squad-survival-be/modules/game/core/entity"
+	"squad-survival-be/modules/game/core/spatial"
 	"squad-survival-be/modules/game/core/system"
+	"squad-survival-be/modules/game/core/world"
 
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/runtime"
@@ -22,6 +24,7 @@ const (
 	tickRate              = entity.TickRate
 	reservationTTLSeconds = 10
 	emptyMatchTTLSeconds  = 60
+	spatialCellSize       = 20.0
 )
 
 type Match struct{}
@@ -31,6 +34,7 @@ type State struct {
 	AllowJoinInProgress bool
 	Players             map[string]*entity.Player
 	Reservations        map[string]int64
+	SpatialGrid         *spatial.Grid
 	EmptyTicks          int64
 	random              *rand.Rand
 }
@@ -53,6 +57,7 @@ func (m *Match) MatchInit(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 		AllowJoinInProgress: boolParam(params, "allow_join_in_progress", true),
 		Players:             make(map[string]*entity.Player),
 		Reservations:        make(map[string]int64),
+		SpatialGrid:         spatial.NewGrid(spatialCellSize),
 		random:              rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 	logger.Info("Survival match initialized: mode=%s max_players=%d", state.Mode, MaxPlayers)
@@ -86,12 +91,23 @@ func (m *Match) MatchJoin(ctx context.Context, logger runtime.Logger, _ *sql.DB,
 	}
 	for _, presence := range presences {
 		delete(state.Reservations, presence.GetSessionId())
-		state.Players[presence.GetSessionId()] = entity.NewPlayer(
+		if _, exists := state.Players[presence.GetSessionId()]; exists {
+			continue
+		}
+		player := entity.NewPlayer(
 			presence.GetUserId(),
 			presence.GetSessionId(),
 			displayNames[presence.GetUserId()],
-			entity.RandomSpawn(state.random),
+			world.RandomSpawn(state.random),
+			state.random,
 		)
+		if err = state.SpatialGrid.Insert(player); err != nil {
+			if logger != nil {
+				logger.Error("Could not insert player into spatial grid: session_id=%s error=%v", presence.GetSessionId(), err)
+			}
+			continue
+		}
+		state.Players[presence.GetSessionId()] = player
 	}
 	state.EmptyTicks = 0
 	state.updateLabel(dispatcher)
@@ -133,6 +149,9 @@ func (m *Match) MatchLeave(_ context.Context, logger runtime.Logger, _ *sql.DB, 
 	playerCount := len(state.Players)
 	for _, presence := range presences {
 		delete(state.Reservations, presence.GetSessionId())
+		if _, exists := state.Players[presence.GetSessionId()]; exists && !state.SpatialGrid.Remove(presence.GetSessionId()) && logger != nil {
+			logger.Error("Could not remove player from spatial grid: session_id=%s", presence.GetSessionId())
+		}
 		delete(state.Players, presence.GetSessionId())
 	}
 	state.updateLabel(dispatcher)
@@ -165,6 +184,9 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 
 	for _, player := range state.Players {
 		entity.StepMovement(player, tick)
+		if err := state.SpatialGrid.Move(player); err != nil && logger != nil {
+			logger.Error("Could not move player in spatial grid: session_id=%s error=%v", player.SessionID, err)
+		}
 	}
 
 	if len(state.Players) == 0 && len(state.Reservations) == 0 {
