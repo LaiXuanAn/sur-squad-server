@@ -303,6 +303,9 @@ func TestMatchLoopSendsPersonalizedDetectionSnapshots(t *testing.T) {
 		if snapshot.Tick != 9 {
 			t.Fatalf("unexpected tick for %s: %d", recipient, snapshot.Tick)
 		}
+		if snapshot.Self == nil || snapshot.Self.SessionId != recipient {
+			t.Fatalf("recipient %s received unexpected self: %+v", recipient, snapshot.Self)
+		}
 		expected := want[recipient]
 		if len(snapshot.Players) != len(expected) {
 			t.Fatalf("recipient %s: expected %v, got %+v", recipient, expected, snapshot.Players)

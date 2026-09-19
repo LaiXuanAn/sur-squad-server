@@ -25,6 +25,7 @@ type PlayerDetectionSnapshot struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tick          int64                  `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
 	Players       []*DetectedPlayer      `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
+	Self          *DetectedPlayer        `protobuf:"bytes,3,opt,name=self,proto3" json:"self,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,6 +70,13 @@ func (x *PlayerDetectionSnapshot) GetTick() int64 {
 func (x *PlayerDetectionSnapshot) GetPlayers() []*DetectedPlayer {
 	if x != nil {
 		return x.Players
+	}
+	return nil
+}
+
+func (x *PlayerDetectionSnapshot) GetSelf() *DetectedPlayer {
+	if x != nil {
+		return x.Self
 	}
 	return nil
 }
@@ -337,10 +345,11 @@ var File_modules_game_core_system_detection_proto protoreflect.FileDescriptor
 
 const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"\n" +
-	"(modules/game/core/system/detection.proto\x12\x10game.core.system\"i\n" +
+	"(modules/game/core/system/detection.proto\x12\x10game.core.system\"\x9f\x01\n" +
 	"\x17PlayerDetectionSnapshot\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x03R\x04tick\x12:\n" +
-	"\aplayers\x18\x02 \x03(\v2 .game.core.system.DetectedPlayerR\aplayers\"\xd3\x02\n" +
+	"\aplayers\x18\x02 \x03(\v2 .game.core.system.DetectedPlayerR\aplayers\x124\n" +
+	"\x04self\x18\x03 \x01(\v2 .game.core.system.DetectedPlayerR\x04self\"\xd3\x02\n" +
 	"\x0eDetectedPlayer\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
@@ -393,16 +402,17 @@ var file_modules_game_core_system_detection_proto_goTypes = []any{
 }
 var file_modules_game_core_system_detection_proto_depIdxs = []int32{
 	1, // 0: game.core.system.PlayerDetectionSnapshot.players:type_name -> game.core.system.DetectedPlayer
-	2, // 1: game.core.system.DetectedPlayer.position:type_name -> game.core.system.Vector2
-	2, // 2: game.core.system.DetectedPlayer.facing:type_name -> game.core.system.Vector2
-	2, // 3: game.core.system.DetectedPlayer.direction:type_name -> game.core.system.Vector2
-	3, // 4: game.core.system.DetectedPlayer.characters:type_name -> game.core.system.CharacterSnapshot
-	2, // 5: game.core.system.CharacterSnapshot.position:type_name -> game.core.system.Vector2
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1, // 1: game.core.system.PlayerDetectionSnapshot.self:type_name -> game.core.system.DetectedPlayer
+	2, // 2: game.core.system.DetectedPlayer.position:type_name -> game.core.system.Vector2
+	2, // 3: game.core.system.DetectedPlayer.facing:type_name -> game.core.system.Vector2
+	2, // 4: game.core.system.DetectedPlayer.direction:type_name -> game.core.system.Vector2
+	3, // 5: game.core.system.DetectedPlayer.characters:type_name -> game.core.system.CharacterSnapshot
+	2, // 6: game.core.system.CharacterSnapshot.position:type_name -> game.core.system.Vector2
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_modules_game_core_system_detection_proto_init() }

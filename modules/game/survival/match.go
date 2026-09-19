@@ -259,7 +259,7 @@ func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher ru
 			continue
 		}
 
-		payload, err := system.EncodePlayerDetectionSnapshot(tick, s.SpatialGrid.QueryPlayers(player))
+		payload, err := system.EncodePlayerDetectionSnapshot(tick, player, s.SpatialGrid.QueryPlayers(player))
 		if err == nil {
 			err = dispatcher.BroadcastMessage(system.OpPlayerDetectionSnapshot, payload, []runtime.Presence{presence}, nil, false)
 		}

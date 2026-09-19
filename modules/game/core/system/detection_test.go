@@ -21,7 +21,7 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	player.Direction = entity.Vector2{X: -1, Y: 0}
 	player.Characters = append(player.Characters, nil)
 
-	data, err := EncodePlayerDetectionSnapshot(42, []*entity.Player{player, nil})
+	data, err := EncodePlayerDetectionSnapshot(42, player, []*entity.Player{player, nil})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,6 +31,9 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	}
 	if snapshot.Tick != 42 || len(snapshot.Players) != 1 {
 		t.Fatalf("unexpected snapshot envelope: %+v", &snapshot)
+	}
+	if snapshot.Self == nil || snapshot.Self.SessionId != player.SessionID {
+		t.Fatalf("unexpected self snapshot: %+v", snapshot.Self)
 	}
 
 	detected := snapshot.Players[0]
@@ -57,7 +60,7 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 }
 
 func TestEncodeEmptyPlayerDetectionSnapshot(t *testing.T) {
-	data, err := EncodePlayerDetectionSnapshot(7, nil)
+	data, err := EncodePlayerDetectionSnapshot(7, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +68,7 @@ func TestEncodeEmptyPlayerDetectionSnapshot(t *testing.T) {
 	if err = proto.Unmarshal(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
-	if snapshot.Tick != 7 || len(snapshot.Players) != 0 {
+	if snapshot.Tick != 7 || snapshot.Self != nil || len(snapshot.Players) != 0 {
 		t.Fatalf("unexpected empty snapshot: %+v", &snapshot)
 	}
 }

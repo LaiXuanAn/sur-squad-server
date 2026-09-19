@@ -7,6 +7,7 @@ option go_package = "squad-survival-be/modules/game/core/system;system";
 message PlayerDetectionSnapshot {
   int64 tick = 1;
   repeated DetectedPlayer players = 2;
+  DetectedPlayer self = 3;
 }
 
 message DetectedPlayer {
