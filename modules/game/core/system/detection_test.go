@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"testing"
 
+	corecombat "squad-survival-be/modules/game/core/combat"
 	"squad-survival-be/modules/game/core/entity"
 
 	"google.golang.org/protobuf/proto"
@@ -21,7 +22,12 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	player.Direction = entity.Vector2{X: -1, Y: 0}
 	player.Characters = append(player.Characters, nil)
 
-	data, err := EncodePlayerDetectionSnapshot(42, player, []*entity.Player{player, nil})
+	projectile := &corecombat.Projectile{
+		ID: "projectile-1", AttackID: "attack-1", AttackerUserID: "user-1", AttackerCharacterID: player.Characters[0].ID,
+		TargetUserID: "user-2", TargetCharacterID: "user-2:1", WeaponType: entity.WeaponBow, WeaponName: "bow",
+		Position: entity.Vector2{X: 3, Y: 4}, Direction: entity.Vector2{X: 1}, Speed: 12,
+	}
+	data, err := EncodePlayerDetectionSnapshot(42, player, []*entity.Player{player, nil}, []*corecombat.Projectile{projectile})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,6 +40,9 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	}
 	if snapshot.Self == nil || snapshot.Self.SessionId != player.SessionID {
 		t.Fatalf("unexpected self snapshot: %+v", snapshot.Self)
+	}
+	if len(snapshot.Projectiles) != 1 || snapshot.Projectiles[0].ProjectileId != projectile.ID || snapshot.Projectiles[0].WeaponName != "bow" || snapshot.Projectiles[0].Position.X != 3 {
+		t.Fatalf("unexpected projectile snapshot: %+v", snapshot.Projectiles)
 	}
 
 	detected := snapshot.Players[0]
@@ -51,6 +60,9 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	if character.CharacterId != source.ID || character.RangeClass != string(source.RangeClass) {
 		t.Fatalf("unexpected character identity: %+v", character)
 	}
+	if character.WeaponName != source.Weapon.Name {
+		t.Fatalf("unexpected weapon name: %q", character.WeaponName)
+	}
 	if character.Health != source.Health || character.MaxHealth != source.MaxHealth || character.Damage != source.Damage ||
 		character.MoveSpeed != source.MoveSpeed || character.AttackSpeed != source.AttackSpeed ||
 		character.AttackRange != source.AttackRange || character.RegenRate != source.RegenRate ||
@@ -63,7 +75,7 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 }
 
 func TestEncodeEmptyPlayerDetectionSnapshot(t *testing.T) {
-	data, err := EncodePlayerDetectionSnapshot(7, nil, nil)
+	data, err := EncodePlayerDetectionSnapshot(7, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -37,6 +37,7 @@ type State struct {
 	Presences           map[string]runtime.Presence
 	Reservations        map[string]int64
 	SpatialGrid         *spatial.Grid
+	Combat              *combat.Simulation
 	EmptyTicks          int64
 	random              *rand.Rand
 }
@@ -61,6 +62,7 @@ func (m *Match) MatchInit(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 		Presences:           make(map[string]runtime.Presence),
 		Reservations:        make(map[string]int64),
 		SpatialGrid:         spatial.NewGrid(spatialCellSize),
+		Combat:              combat.NewSimulation(),
 		random:              rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 	logger.Info("Survival match initialized: mode=%s max_players=%d", state.Mode, MaxPlayers)
@@ -198,9 +200,12 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 		}
 	}
 	nearbyPlayers := state.queryNearbyPlayers()
-	combatEvents := combat.Step(state.Players, tick, state.random)
+	if state.Combat == nil {
+		state.Combat = combat.NewSimulation()
+	}
+	combatEvents := state.Combat.Step(state.Players, tick, state.random)
 	state.broadcastCombatEvents(logger, dispatcher, tick, combatEvents, nearbyPlayers)
-	state.broadcastDetectionSnapshots(logger, dispatcher, tick, nearbyPlayers)
+	state.broadcastDetectionSnapshots(logger, dispatcher, tick, nearbyPlayers, state.Combat.Projectiles())
 
 	if len(state.Players) == 0 && len(state.Reservations) == 0 {
 		state.EmptyTicks++
@@ -303,7 +308,26 @@ func relevantCombatEvents(player *entity.Player, nearby []*entity.Player, events
 	return relevant
 }
 
-func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64, nearbyPlayers map[string][]*entity.Player) {
+func relevantProjectiles(player *entity.Player, nearby []*entity.Player, projectiles []*combat.Projectile) []*combat.Projectile {
+	visibleUsers := make(map[string]struct{}, len(nearby)+1)
+	visibleUsers[player.UserID] = struct{}{}
+	for _, detected := range nearby {
+		if detected != nil {
+			visibleUsers[detected.UserID] = struct{}{}
+		}
+	}
+	relevant := make([]*combat.Projectile, 0)
+	for _, projectile := range projectiles {
+		_, seesAttacker := visibleUsers[projectile.AttackerUserID]
+		_, seesTarget := visibleUsers[projectile.TargetUserID]
+		if seesAttacker || seesTarget {
+			relevant = append(relevant, projectile)
+		}
+	}
+	return relevant
+}
+
+func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64, nearbyPlayers map[string][]*entity.Player, projectiles []*combat.Projectile) {
 	for sessionID, player := range s.Players {
 		presence, ok := s.Presences[sessionID]
 		if !ok {
@@ -313,7 +337,7 @@ func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher ru
 			continue
 		}
 
-		payload, err := system.EncodePlayerDetectionSnapshot(tick, player, nearbyPlayers[sessionID])
+		payload, err := system.EncodePlayerDetectionSnapshot(tick, player, nearbyPlayers[sessionID], relevantProjectiles(player, nearbyPlayers[sessionID], projectiles))
 		if err == nil {
 			err = dispatcher.BroadcastMessage(system.OpPlayerDetectionSnapshot, payload, []runtime.Presence{presence}, nil, false)
 		}

@@ -1,16 +1,30 @@
 package system
 
 import (
+	"squad-survival-be/modules/game/core/combat"
 	"squad-survival-be/modules/game/core/entity"
 
 	"google.golang.org/protobuf/proto"
 )
 
-func EncodePlayerDetectionSnapshot(tick int64, self *entity.Player, players []*entity.Player) ([]byte, error) {
+func EncodePlayerDetectionSnapshot(tick int64, self *entity.Player, players []*entity.Player, projectiles []*combat.Projectile) ([]byte, error) {
 	snapshot := &PlayerDetectionSnapshot{
-		Tick:    tick,
-		Self:    playerSnapshot(self),
-		Players: make([]*DetectedPlayer, 0, len(players)),
+		Tick:        tick,
+		Self:        playerSnapshot(self),
+		Players:     make([]*DetectedPlayer, 0, len(players)),
+		Projectiles: make([]*ProjectileSnapshot, 0, len(projectiles)),
+	}
+	for _, projectile := range projectiles {
+		if projectile == nil {
+			continue
+		}
+		snapshot.Projectiles = append(snapshot.Projectiles, &ProjectileSnapshot{
+			ProjectileId: projectile.ID, AttackId: projectile.AttackID,
+			AttackerUserId: projectile.AttackerUserID, AttackerCharacterId: projectile.AttackerCharacterID,
+			TargetUserId: projectile.TargetUserID, TargetCharacterId: projectile.TargetCharacterID,
+			WeaponType: string(projectile.WeaponType), WeaponName: projectile.WeaponName,
+			Position: vectorSnapshot(projectile.Position), Direction: vectorSnapshot(projectile.Direction), Speed: projectile.Speed,
+		})
 	}
 	for _, player := range players {
 		if detected := playerSnapshot(player); detected != nil {
@@ -33,6 +47,7 @@ func playerSnapshot(player *entity.Player) *DetectedPlayer {
 		characters = append(characters, &CharacterSnapshot{
 			CharacterId: character.ID,
 			RangeClass:  string(character.RangeClass),
+			WeaponName:  character.Weapon.Name,
 			Health:      character.Health,
 			MaxHealth:   character.MaxHealth,
 			Damage:      character.Damage,

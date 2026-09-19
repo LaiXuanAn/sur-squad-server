@@ -29,18 +29,40 @@ func combatEventSnapshot(event corecombat.Event) (*CombatEvent, error) {
 		return &CombatEvent{Event: &CombatEvent_AttackStarted{AttackStarted: &AttackStarted{
 			AttackId: event.AttackID, AttackerUserId: event.AttackerUserID, AttackerCharacterId: event.AttackerCharacterID,
 			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID, WeaponType: string(event.WeaponType),
-			StartTick: event.StartTick, ImpactTick: event.ImpactTick, CompleteTick: event.CompleteTick,
+			StartTick: event.StartTick, ImpactTick: event.ImpactTick, CompleteTick: event.CompleteTick, WeaponName: event.WeaponName,
 		}}}, nil
 	case corecombat.EventDamageApplied:
 		return &CombatEvent{Event: &CombatEvent_DamageApplied{DamageApplied: &DamageApplied{
 			AttackId: event.AttackID, AttackerUserId: event.AttackerUserID, AttackerCharacterId: event.AttackerCharacterID,
 			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID,
-			Damage: event.Damage, RemainingHealth: event.RemainingHealth, Tick: event.Tick,
+			Damage: event.Damage, RemainingHealth: event.RemainingHealth, Tick: event.Tick, ProjectileId: event.ProjectileID,
 		}}}, nil
 	case corecombat.EventCharacterDied:
 		return &CombatEvent{Event: &CombatEvent_CharacterDied{CharacterDied: &CharacterDied{
 			AttackId: event.AttackID, KillerUserId: event.AttackerUserID, KillerCharacterId: event.AttackerCharacterID,
-			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID, Tick: event.Tick,
+			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID, Tick: event.Tick, ProjectileId: event.ProjectileID,
+		}}}, nil
+	case corecombat.EventProjectileSpawned:
+		return &CombatEvent{Event: &CombatEvent_ProjectileSpawned{ProjectileSpawned: &ProjectileSpawned{
+			ProjectileId: event.ProjectileID, AttackId: event.AttackID,
+			AttackerUserId: event.AttackerUserID, AttackerCharacterId: event.AttackerCharacterID,
+			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID,
+			WeaponType: string(event.WeaponType), WeaponName: event.WeaponName,
+			Position: vectorSnapshot(event.Position), Direction: vectorSnapshot(event.Direction), Speed: event.Speed, Tick: event.Tick,
+		}}}, nil
+	case corecombat.EventProjectileHit:
+		return &CombatEvent{Event: &CombatEvent_ProjectileHit{ProjectileHit: &ProjectileHit{
+			ProjectileId: event.ProjectileID, AttackId: event.AttackID,
+			AttackerUserId: event.AttackerUserID, AttackerCharacterId: event.AttackerCharacterID,
+			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID,
+			Position: vectorSnapshot(event.Position), Tick: event.Tick,
+		}}}, nil
+	case corecombat.EventProjectileExpired:
+		return &CombatEvent{Event: &CombatEvent_ProjectileExpired{ProjectileExpired: &ProjectileExpired{
+			ProjectileId: event.ProjectileID, AttackId: event.AttackID,
+			AttackerUserId: event.AttackerUserID, AttackerCharacterId: event.AttackerCharacterID,
+			TargetUserId: event.TargetUserID, TargetCharacterId: event.TargetCharacterID,
+			Position: vectorSnapshot(event.Position), Tick: event.Tick,
 		}}}, nil
 	default:
 		return nil, fmt.Errorf("unknown combat event type %d", event.Type)

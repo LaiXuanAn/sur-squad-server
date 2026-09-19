@@ -133,12 +133,10 @@ func rangeClassPriority(rangeClass RangeClass) int {
 	switch rangeClass {
 	case RangeRanged:
 		return 0
-	case RangeReach:
-		return 1
 	case RangeMelee:
-		return 2
+		return 1
 	default:
-		return 3
+		return 2
 	}
 }
 

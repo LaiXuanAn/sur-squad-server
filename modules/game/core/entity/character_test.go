@@ -76,7 +76,7 @@ func TestCharactersByRangeClass(t *testing.T) {
 	if len(got) != 1 || got[0] != melee {
 		t.Fatalf("unexpected melee characters: %+v", got)
 	}
-	if got := player.CharactersByRangeClass(RangeReach); len(got) != 0 {
-		t.Fatalf("expected no reach characters, got %+v", got)
+	if got := player.CharactersByRangeClass(RangeClass("reach")); len(got) != 0 {
+		t.Fatalf("expected no removed reach characters, got %+v", got)
 	}
 }

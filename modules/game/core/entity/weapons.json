@@ -2,6 +2,7 @@
   "weapons": [
     {
       "type": "dagger",
+      "name": "dagger",
       "range_class": "melee",
       "health": 90,
       "damage": 8,
@@ -9,11 +10,13 @@
       "attack_speed": 1.8,
       "attack_range": 1.2,
       "impact_ratio": 0.35,
+      "projectile_speed": 0,
       "regen_rate": 0,
       "damage_ratio": 1.15
     },
     {
       "type": "bow",
+      "name": "bow",
       "range_class": "ranged",
       "health": 85,
       "damage": 11,
@@ -21,11 +24,13 @@
       "attack_speed": 1.15,
       "attack_range": 8,
       "impact_ratio": 0.55,
+      "projectile_speed": 12,
       "regen_rate": 0,
       "damage_ratio": 1.2
     },
     {
       "type": "staff",
+      "name": "staff",
       "range_class": "ranged",
       "health": 105,
       "damage": 13,
@@ -33,23 +38,27 @@
       "attack_speed": 0.9,
       "attack_range": 6.5,
       "impact_ratio": 0.6,
+      "projectile_speed": 9,
       "regen_rate": 0.8,
       "damage_ratio": 1.15
     },
     {
       "type": "spear",
-      "range_class": "reach",
+      "name": "spear",
+      "range_class": "melee",
       "health": 110,
       "damage": 12,
       "move_speed": 4.9,
       "attack_speed": 1.05,
       "attack_range": 3.2,
       "impact_ratio": 0.5,
+      "projectile_speed": 0,
       "regen_rate": 0,
       "damage_ratio": 1.1
     },
     {
       "type": "sword",
+      "name": "sword",
       "range_class": "melee",
       "health": 115,
       "damage": 11,
@@ -57,11 +66,13 @@
       "attack_speed": 1.2,
       "attack_range": 1.8,
       "impact_ratio": 0.45,
+      "projectile_speed": 0,
       "regen_rate": 0.2,
       "damage_ratio": 1.1
     },
     {
       "type": "wand",
+      "name": "wand",
       "range_class": "ranged",
       "health": 80,
       "damage": 15,
@@ -69,11 +80,13 @@
       "attack_speed": 1,
       "attack_range": 7,
       "impact_ratio": 0.45,
+      "projectile_speed": 11,
       "regen_rate": 1.2,
       "damage_ratio": 1.25
     },
     {
       "type": "axe",
+      "name": "axe",
       "range_class": "melee",
       "health": 125,
       "damage": 16,
@@ -81,11 +94,13 @@
       "attack_speed": 0.75,
       "attack_range": 1.7,
       "impact_ratio": 0.6,
+      "projectile_speed": 0,
       "regen_rate": 0,
       "damage_ratio": 1.2
     },
     {
       "type": "blunt",
+      "name": "blunt",
       "range_class": "melee",
       "health": 135,
       "damage": 14,
@@ -93,6 +108,7 @@
       "attack_speed": 0.7,
       "attack_range": 1.6,
       "impact_ratio": 0.65,
+      "projectile_speed": 0,
       "regen_rate": 0.4,
       "damage_ratio": 1.1
     }

@@ -4,6 +4,8 @@ package game.core.system;
 
 option go_package = "squad-survival-be/modules/game/core/system;system";
 
+import "modules/game/core/system/detection.proto";
+
 message CombatEventBatch {
   int64 tick = 1;
   repeated CombatEvent events = 2;
@@ -14,6 +16,9 @@ message CombatEvent {
     AttackStarted attack_started = 1;
     DamageApplied damage_applied = 2;
     CharacterDied character_died = 3;
+    ProjectileSpawned projectile_spawned = 4;
+    ProjectileHit projectile_hit = 5;
+    ProjectileExpired projectile_expired = 6;
   }
 }
 
@@ -27,6 +32,7 @@ message AttackStarted {
   int64 start_tick = 7;
   int64 impact_tick = 8;
   int64 complete_tick = 9;
+  string weapon_name = 10;
 }
 
 message DamageApplied {
@@ -38,6 +44,7 @@ message DamageApplied {
   double damage = 6;
   double remaining_health = 7;
   int64 tick = 8;
+  string projectile_id = 9;
 }
 
 message CharacterDied {
@@ -47,4 +54,42 @@ message CharacterDied {
   string target_user_id = 4;
   string target_character_id = 5;
   int64 tick = 6;
+  string projectile_id = 7;
+}
+
+message ProjectileSpawned {
+  string projectile_id = 1;
+  string attack_id = 2;
+  string attacker_user_id = 3;
+  string attacker_character_id = 4;
+  string target_user_id = 5;
+  string target_character_id = 6;
+  string weapon_type = 7;
+  string weapon_name = 8;
+  Vector2 position = 9;
+  Vector2 direction = 10;
+  double speed = 11;
+  int64 tick = 12;
+}
+
+message ProjectileHit {
+  string projectile_id = 1;
+  string attack_id = 2;
+  string attacker_user_id = 3;
+  string attacker_character_id = 4;
+  string target_user_id = 5;
+  string target_character_id = 6;
+  Vector2 position = 7;
+  int64 tick = 8;
+}
+
+message ProjectileExpired {
+  string projectile_id = 1;
+  string attack_id = 2;
+  string attacker_user_id = 3;
+  string attacker_character_id = 4;
+  string target_user_id = 5;
+  string target_character_id = 6;
+  Vector2 position = 7;
+  int64 tick = 8;
 }

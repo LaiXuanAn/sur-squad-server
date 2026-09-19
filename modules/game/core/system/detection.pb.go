@@ -26,6 +26,7 @@ type PlayerDetectionSnapshot struct {
 	Tick          int64                  `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
 	Players       []*DetectedPlayer      `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	Self          *DetectedPlayer        `protobuf:"bytes,3,opt,name=self,proto3" json:"self,omitempty"`
+	Projectiles   []*ProjectileSnapshot  `protobuf:"bytes,4,rep,name=projectiles,proto3" json:"projectiles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -77,6 +78,13 @@ func (x *PlayerDetectionSnapshot) GetPlayers() []*DetectedPlayer {
 func (x *PlayerDetectionSnapshot) GetSelf() *DetectedPlayer {
 	if x != nil {
 		return x.Self
+	}
+	return nil
+}
+
+func (x *PlayerDetectionSnapshot) GetProjectiles() []*ProjectileSnapshot {
+	if x != nil {
+		return x.Projectiles
 	}
 	return nil
 }
@@ -239,6 +247,7 @@ type CharacterSnapshot struct {
 	MaxHealth     float64                `protobuf:"fixed64,10,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"`
 	CharacterId   string                 `protobuf:"bytes,11,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
 	RangeClass    string                 `protobuf:"bytes,12,opt,name=range_class,json=rangeClass,proto3" json:"range_class,omitempty"`
+	WeaponName    string                 `protobuf:"bytes,13,opt,name=weapon_name,json=weaponName,proto3" json:"weapon_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -357,15 +366,147 @@ func (x *CharacterSnapshot) GetRangeClass() string {
 	return ""
 }
 
+func (x *CharacterSnapshot) GetWeaponName() string {
+	if x != nil {
+		return x.WeaponName
+	}
+	return ""
+}
+
+type ProjectileSnapshot struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ProjectileId        string                 `protobuf:"bytes,1,opt,name=projectile_id,json=projectileId,proto3" json:"projectile_id,omitempty"`
+	AttackId            string                 `protobuf:"bytes,2,opt,name=attack_id,json=attackId,proto3" json:"attack_id,omitempty"`
+	AttackerUserId      string                 `protobuf:"bytes,3,opt,name=attacker_user_id,json=attackerUserId,proto3" json:"attacker_user_id,omitempty"`
+	AttackerCharacterId string                 `protobuf:"bytes,4,opt,name=attacker_character_id,json=attackerCharacterId,proto3" json:"attacker_character_id,omitempty"`
+	TargetUserId        string                 `protobuf:"bytes,5,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`
+	TargetCharacterId   string                 `protobuf:"bytes,6,opt,name=target_character_id,json=targetCharacterId,proto3" json:"target_character_id,omitempty"`
+	WeaponType          string                 `protobuf:"bytes,7,opt,name=weapon_type,json=weaponType,proto3" json:"weapon_type,omitempty"`
+	WeaponName          string                 `protobuf:"bytes,8,opt,name=weapon_name,json=weaponName,proto3" json:"weapon_name,omitempty"`
+	Position            *Vector2               `protobuf:"bytes,9,opt,name=position,proto3" json:"position,omitempty"`
+	Direction           *Vector2               `protobuf:"bytes,10,opt,name=direction,proto3" json:"direction,omitempty"`
+	Speed               float64                `protobuf:"fixed64,11,opt,name=speed,proto3" json:"speed,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ProjectileSnapshot) Reset() {
+	*x = ProjectileSnapshot{}
+	mi := &file_modules_game_core_system_detection_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectileSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectileSnapshot) ProtoMessage() {}
+
+func (x *ProjectileSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_modules_game_core_system_detection_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectileSnapshot.ProtoReflect.Descriptor instead.
+func (*ProjectileSnapshot) Descriptor() ([]byte, []int) {
+	return file_modules_game_core_system_detection_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ProjectileSnapshot) GetProjectileId() string {
+	if x != nil {
+		return x.ProjectileId
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetAttackId() string {
+	if x != nil {
+		return x.AttackId
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetAttackerUserId() string {
+	if x != nil {
+		return x.AttackerUserId
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetAttackerCharacterId() string {
+	if x != nil {
+		return x.AttackerCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetTargetUserId() string {
+	if x != nil {
+		return x.TargetUserId
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetTargetCharacterId() string {
+	if x != nil {
+		return x.TargetCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetWeaponType() string {
+	if x != nil {
+		return x.WeaponType
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetWeaponName() string {
+	if x != nil {
+		return x.WeaponName
+	}
+	return ""
+}
+
+func (x *ProjectileSnapshot) GetPosition() *Vector2 {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *ProjectileSnapshot) GetDirection() *Vector2 {
+	if x != nil {
+		return x.Direction
+	}
+	return nil
+}
+
+func (x *ProjectileSnapshot) GetSpeed() float64 {
+	if x != nil {
+		return x.Speed
+	}
+	return 0
+}
+
 var File_modules_game_core_system_detection_proto protoreflect.FileDescriptor
 
 const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"\n" +
-	"(modules/game/core/system/detection.proto\x12\x10game.core.system\"\x9f\x01\n" +
+	"(modules/game/core/system/detection.proto\x12\x10game.core.system\"\xe7\x01\n" +
 	"\x17PlayerDetectionSnapshot\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x03R\x04tick\x12:\n" +
 	"\aplayers\x18\x02 \x03(\v2 .game.core.system.DetectedPlayerR\aplayers\x124\n" +
-	"\x04self\x18\x03 \x01(\v2 .game.core.system.DetectedPlayerR\x04self\"\xd3\x02\n" +
+	"\x04self\x18\x03 \x01(\v2 .game.core.system.DetectedPlayerR\x04self\x12F\n" +
+	"\vprojectiles\x18\x04 \x03(\v2$.game.core.system.ProjectileSnapshotR\vprojectiles\"\xd3\x02\n" +
 	"\x0eDetectedPlayer\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
@@ -379,7 +520,7 @@ const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"characters\"%\n" +
 	"\aVector2\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x01R\x01y\"\xa5\x03\n" +
+	"\x01y\x18\x02 \x01(\x01R\x01y\"\xc6\x03\n" +
 	"\x11CharacterSnapshot\x12\x16\n" +
 	"\x06health\x18\x01 \x01(\x01R\x06health\x12\x16\n" +
 	"\x06damage\x18\x02 \x01(\x01R\x06damage\x12\x1d\n" +
@@ -398,7 +539,24 @@ const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	" \x01(\x01R\tmaxHealth\x12!\n" +
 	"\fcharacter_id\x18\v \x01(\tR\vcharacterId\x12\x1f\n" +
 	"\vrange_class\x18\f \x01(\tR\n" +
-	"rangeClassB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
+	"rangeClass\x12\x1f\n" +
+	"\vweapon_name\x18\r \x01(\tR\n" +
+	"weaponName\"\xd2\x03\n" +
+	"\x12ProjectileSnapshot\x12#\n" +
+	"\rprojectile_id\x18\x01 \x01(\tR\fprojectileId\x12\x1b\n" +
+	"\tattack_id\x18\x02 \x01(\tR\battackId\x12(\n" +
+	"\x10attacker_user_id\x18\x03 \x01(\tR\x0eattackerUserId\x122\n" +
+	"\x15attacker_character_id\x18\x04 \x01(\tR\x13attackerCharacterId\x12$\n" +
+	"\x0etarget_user_id\x18\x05 \x01(\tR\ftargetUserId\x12.\n" +
+	"\x13target_character_id\x18\x06 \x01(\tR\x11targetCharacterId\x12\x1f\n" +
+	"\vweapon_type\x18\a \x01(\tR\n" +
+	"weaponType\x12\x1f\n" +
+	"\vweapon_name\x18\b \x01(\tR\n" +
+	"weaponName\x125\n" +
+	"\bposition\x18\t \x01(\v2\x19.game.core.system.Vector2R\bposition\x127\n" +
+	"\tdirection\x18\n" +
+	" \x01(\v2\x19.game.core.system.Vector2R\tdirection\x12\x14\n" +
+	"\x05speed\x18\v \x01(\x01R\x05speedB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
 
 var (
 	file_modules_game_core_system_detection_proto_rawDescOnce sync.Once
@@ -412,26 +570,30 @@ func file_modules_game_core_system_detection_proto_rawDescGZIP() []byte {
 	return file_modules_game_core_system_detection_proto_rawDescData
 }
 
-var file_modules_game_core_system_detection_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_modules_game_core_system_detection_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_modules_game_core_system_detection_proto_goTypes = []any{
 	(*PlayerDetectionSnapshot)(nil), // 0: game.core.system.PlayerDetectionSnapshot
 	(*DetectedPlayer)(nil),          // 1: game.core.system.DetectedPlayer
 	(*Vector2)(nil),                 // 2: game.core.system.Vector2
 	(*CharacterSnapshot)(nil),       // 3: game.core.system.CharacterSnapshot
+	(*ProjectileSnapshot)(nil),      // 4: game.core.system.ProjectileSnapshot
 }
 var file_modules_game_core_system_detection_proto_depIdxs = []int32{
-	1, // 0: game.core.system.PlayerDetectionSnapshot.players:type_name -> game.core.system.DetectedPlayer
-	1, // 1: game.core.system.PlayerDetectionSnapshot.self:type_name -> game.core.system.DetectedPlayer
-	2, // 2: game.core.system.DetectedPlayer.position:type_name -> game.core.system.Vector2
-	2, // 3: game.core.system.DetectedPlayer.facing:type_name -> game.core.system.Vector2
-	2, // 4: game.core.system.DetectedPlayer.direction:type_name -> game.core.system.Vector2
-	3, // 5: game.core.system.DetectedPlayer.characters:type_name -> game.core.system.CharacterSnapshot
-	2, // 6: game.core.system.CharacterSnapshot.position:type_name -> game.core.system.Vector2
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: game.core.system.PlayerDetectionSnapshot.players:type_name -> game.core.system.DetectedPlayer
+	1,  // 1: game.core.system.PlayerDetectionSnapshot.self:type_name -> game.core.system.DetectedPlayer
+	4,  // 2: game.core.system.PlayerDetectionSnapshot.projectiles:type_name -> game.core.system.ProjectileSnapshot
+	2,  // 3: game.core.system.DetectedPlayer.position:type_name -> game.core.system.Vector2
+	2,  // 4: game.core.system.DetectedPlayer.facing:type_name -> game.core.system.Vector2
+	2,  // 5: game.core.system.DetectedPlayer.direction:type_name -> game.core.system.Vector2
+	3,  // 6: game.core.system.DetectedPlayer.characters:type_name -> game.core.system.CharacterSnapshot
+	2,  // 7: game.core.system.CharacterSnapshot.position:type_name -> game.core.system.Vector2
+	2,  // 8: game.core.system.ProjectileSnapshot.position:type_name -> game.core.system.Vector2
+	2,  // 9: game.core.system.ProjectileSnapshot.direction:type_name -> game.core.system.Vector2
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_modules_game_core_system_detection_proto_init() }
@@ -445,7 +607,7 @@ func file_modules_game_core_system_detection_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_modules_game_core_system_detection_proto_rawDesc), len(file_modules_game_core_system_detection_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

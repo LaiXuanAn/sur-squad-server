@@ -12,7 +12,7 @@ func TestMeleeLocksNearestTargetAndSchedulesAttack(t *testing.T) {
 	far := combatPlayer("c", "c:1", entity.RangeMelee, entity.Vector2{X: 1.5}, 2, 0.5)
 	near := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 1}, 2, 0.5)
 
-	events := Step(playerMap(attacker, far, near), 10, rand.New(rand.NewSource(1)))
+	events := NewSimulation().Step(playerMap(attacker, far, near), 10, rand.New(rand.NewSource(1)))
 	started := findEvent(events, EventAttackStarted, "a:1")
 	if started == nil || started.TargetCharacterID != "b:1" {
 		t.Fatalf("expected nearest target b:1, got %+v", started)
@@ -23,24 +23,65 @@ func TestMeleeLocksNearestTargetAndSchedulesAttack(t *testing.T) {
 }
 
 func TestTargetTieBreaksByUserAndCharacterID(t *testing.T) {
-	attacker := combatPlayer("a", "a:1", entity.RangeReach, entity.Vector2{}, 3, 0.5)
+	attacker := combatPlayer("a", "a:1", entity.RangeMelee, entity.Vector2{}, 3, 0.5)
 	targetB2 := combatPlayer("b", "b:2", entity.RangeMelee, entity.Vector2{X: 1}, 1, 0.5)
 	targetB1 := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: -1}, 1, 0.5)
 
-	events := Step(playerMap(attacker, targetB2, targetB1), 1, rand.New(rand.NewSource(1)))
+	events := NewSimulation().Step(playerMap(attacker, targetB2, targetB1), 1, rand.New(rand.NewSource(1)))
 	started := findEvent(events, EventAttackStarted, "a:1")
 	if started == nil || started.TargetCharacterID != "b:1" {
 		t.Fatalf("expected deterministic target b:1, got %+v", started)
 	}
 }
 
-func TestRangedDoesNotAttack(t *testing.T) {
+func TestRangedSpawnsAndHitsWithProjectile(t *testing.T) {
 	attacker := combatPlayer("a", "a:1", entity.RangeRanged, entity.Vector2{}, 10, 0.5)
-	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{}, 1, 0.5)
+	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 2}, 1, 0.5)
+	attacker.Characters[0].AttackSpeed = 5
+	attacker.Characters[0].Weapon.ProjectileSpeed = 20
+	attacker.Characters[0].Weapon.Name = "bow"
+	attacker.Characters[0].Weapon.Type = entity.WeaponBow
+	random := rand.New(rand.NewSource(1))
+	players := playerMap(attacker, target)
+	simulation := NewSimulation()
 
-	events := Step(playerMap(attacker, target), 1, rand.New(rand.NewSource(1)))
-	if event := findEvent(events, EventAttackStarted, "a:1"); event != nil {
-		t.Fatalf("ranged character unexpectedly attacked: %+v", event)
+	if event := findEvent(simulation.Step(players, 1, random), EventAttackStarted, "a:1"); event == nil {
+		t.Fatal("expected ranged attack to start")
+	}
+	spawnEvents := simulation.Step(players, 2, random)
+	if event := findEvent(spawnEvents, EventProjectileSpawned, "a:1"); event == nil {
+		t.Fatalf("expected projectile spawn, got %+v", spawnEvents)
+	}
+	if len(simulation.Projectiles()) != 1 {
+		t.Fatalf("expected active projectile, got %+v", simulation.Projectiles())
+	}
+	hitEvents := simulation.Step(players, 3, random)
+	if findEvent(hitEvents, EventProjectileHit, "a:1") == nil || findEvent(hitEvents, EventDamageApplied, "a:1") == nil {
+		t.Fatalf("expected projectile hit and damage, got %+v", hitEvents)
+	}
+	if len(simulation.Projectiles()) != 0 || target.Characters[0].Health >= 100 {
+		t.Fatalf("projectile did not resolve: projectiles=%+v health=%f", simulation.Projectiles(), target.Characters[0].Health)
+	}
+}
+
+func TestProjectileExpiresWhenTargetDiesBeforeHit(t *testing.T) {
+	attacker := combatPlayer("a", "a:1", entity.RangeRanged, entity.Vector2{}, 10, 0.5)
+	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 8}, 1, 0.5)
+	attacker.Characters[0].AttackSpeed = 5
+	attacker.Characters[0].Weapon = entity.Weapon{Type: entity.WeaponBow, Name: "bow", ProjectileSpeed: 10}
+	random := rand.New(rand.NewSource(1))
+	players := playerMap(attacker, target)
+	simulation := NewSimulation()
+	simulation.Step(players, 1, random)
+	simulation.Step(players, 2, random)
+	target.Characters[0].Health = 0
+
+	events := simulation.Step(players, 3, random)
+	if findEvent(events, EventProjectileExpired, "a:1") == nil {
+		t.Fatalf("expected projectile expired event, got %+v", events)
+	}
+	if len(simulation.Projectiles()) != 0 {
+		t.Fatalf("expired projectile remained active: %+v", simulation.Projectiles())
 	}
 }
 
@@ -49,10 +90,11 @@ func TestLeavingRangeCancelsAndResetsAttack(t *testing.T) {
 	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 1}, 2, 0.5)
 	random := rand.New(rand.NewSource(1))
 	players := playerMap(attacker, target)
-	Step(players, 1, random)
+	simulation := NewSimulation()
+	simulation.Step(players, 1, random)
 	target.Characters[0].Position.X = 3
 
-	events := Step(players, 2, random)
+	events := simulation.Step(players, 2, random)
 	if attacker.Characters[0].TargetCharacterID != "" || attacker.Characters[0].AttackStartTick != 0 {
 		t.Fatalf("attack was not reset: %+v", attacker.Characters[0])
 	}
@@ -66,10 +108,11 @@ func TestTargetDeathBeforeImpactCancelsAttack(t *testing.T) {
 	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 1}, 2, 0.5)
 	random := rand.New(rand.NewSource(1))
 	players := playerMap(attacker, target)
-	Step(players, 1, random)
+	simulation := NewSimulation()
+	simulation.Step(players, 1, random)
 	target.Characters[0].Health = 0
 
-	events := Step(players, 2, random)
+	events := simulation.Step(players, 2, random)
 	if attacker.Characters[0].TargetCharacterID != "" {
 		t.Fatalf("dead target remained locked: %+v", attacker.Characters[0])
 	}
@@ -90,8 +133,9 @@ func TestSimultaneousImpactsCanKillBothCharacters(t *testing.T) {
 	}
 	random := rand.New(rand.NewSource(1))
 	players := playerMap(playerA, playerB)
-	Step(players, 1, random)
-	events := Step(players, 2, random)
+	simulation := NewSimulation()
+	simulation.Step(players, 1, random)
+	events := simulation.Step(players, 2, random)
 
 	if len(playerA.Characters) != 0 || len(playerB.Characters) != 0 {
 		t.Fatalf("expected both characters removed: a=%d b=%d", len(playerA.Characters), len(playerB.Characters))
@@ -105,7 +149,7 @@ func TestAttackRangeIncludesBoundary(t *testing.T) {
 	attacker := combatPlayer("a", "a:1", entity.RangeMelee, entity.Vector2{}, 2, 0.5)
 	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 2}, 2, 0.5)
 
-	events := Step(playerMap(attacker, target), 1, rand.New(rand.NewSource(1)))
+	events := NewSimulation().Step(playerMap(attacker, target), 1, rand.New(rand.NewSource(1)))
 	if findEvent(events, EventAttackStarted, "a:1") == nil {
 		t.Fatal("expected target on attack boundary to be selected")
 	}
@@ -117,7 +161,7 @@ func combatPlayer(userID, characterID string, rangeClass entity.RangeClass, posi
 		Characters: []*entity.Character{{
 			ID: characterID, RangeClass: rangeClass, Position: position,
 			Health: 100, AttackSpeed: 2, AttackRange: attackRange, ImpactRatio: impactRatio,
-			Damage: 10, DamageRatio: 1, Weapon: entity.Weapon{Type: entity.WeaponSword},
+			Damage: 10, DamageRatio: 1, Weapon: entity.Weapon{Type: entity.WeaponSword, Name: "sword"},
 		}},
 	}
 }

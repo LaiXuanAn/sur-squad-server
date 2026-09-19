@@ -80,6 +80,9 @@ type CombatEvent struct {
 	//	*CombatEvent_AttackStarted
 	//	*CombatEvent_DamageApplied
 	//	*CombatEvent_CharacterDied
+	//	*CombatEvent_ProjectileSpawned
+	//	*CombatEvent_ProjectileHit
+	//	*CombatEvent_ProjectileExpired
 	Event         isCombatEvent_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -149,6 +152,33 @@ func (x *CombatEvent) GetCharacterDied() *CharacterDied {
 	return nil
 }
 
+func (x *CombatEvent) GetProjectileSpawned() *ProjectileSpawned {
+	if x != nil {
+		if x, ok := x.Event.(*CombatEvent_ProjectileSpawned); ok {
+			return x.ProjectileSpawned
+		}
+	}
+	return nil
+}
+
+func (x *CombatEvent) GetProjectileHit() *ProjectileHit {
+	if x != nil {
+		if x, ok := x.Event.(*CombatEvent_ProjectileHit); ok {
+			return x.ProjectileHit
+		}
+	}
+	return nil
+}
+
+func (x *CombatEvent) GetProjectileExpired() *ProjectileExpired {
+	if x != nil {
+		if x, ok := x.Event.(*CombatEvent_ProjectileExpired); ok {
+			return x.ProjectileExpired
+		}
+	}
+	return nil
+}
+
 type isCombatEvent_Event interface {
 	isCombatEvent_Event()
 }
@@ -165,11 +195,29 @@ type CombatEvent_CharacterDied struct {
 	CharacterDied *CharacterDied `protobuf:"bytes,3,opt,name=character_died,json=characterDied,proto3,oneof"`
 }
 
+type CombatEvent_ProjectileSpawned struct {
+	ProjectileSpawned *ProjectileSpawned `protobuf:"bytes,4,opt,name=projectile_spawned,json=projectileSpawned,proto3,oneof"`
+}
+
+type CombatEvent_ProjectileHit struct {
+	ProjectileHit *ProjectileHit `protobuf:"bytes,5,opt,name=projectile_hit,json=projectileHit,proto3,oneof"`
+}
+
+type CombatEvent_ProjectileExpired struct {
+	ProjectileExpired *ProjectileExpired `protobuf:"bytes,6,opt,name=projectile_expired,json=projectileExpired,proto3,oneof"`
+}
+
 func (*CombatEvent_AttackStarted) isCombatEvent_Event() {}
 
 func (*CombatEvent_DamageApplied) isCombatEvent_Event() {}
 
 func (*CombatEvent_CharacterDied) isCombatEvent_Event() {}
+
+func (*CombatEvent_ProjectileSpawned) isCombatEvent_Event() {}
+
+func (*CombatEvent_ProjectileHit) isCombatEvent_Event() {}
+
+func (*CombatEvent_ProjectileExpired) isCombatEvent_Event() {}
 
 type AttackStarted struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
@@ -182,6 +230,7 @@ type AttackStarted struct {
 	StartTick           int64                  `protobuf:"varint,7,opt,name=start_tick,json=startTick,proto3" json:"start_tick,omitempty"`
 	ImpactTick          int64                  `protobuf:"varint,8,opt,name=impact_tick,json=impactTick,proto3" json:"impact_tick,omitempty"`
 	CompleteTick        int64                  `protobuf:"varint,9,opt,name=complete_tick,json=completeTick,proto3" json:"complete_tick,omitempty"`
+	WeaponName          string                 `protobuf:"bytes,10,opt,name=weapon_name,json=weaponName,proto3" json:"weapon_name,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -279,6 +328,13 @@ func (x *AttackStarted) GetCompleteTick() int64 {
 	return 0
 }
 
+func (x *AttackStarted) GetWeaponName() string {
+	if x != nil {
+		return x.WeaponName
+	}
+	return ""
+}
+
 type DamageApplied struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	AttackId            string                 `protobuf:"bytes,1,opt,name=attack_id,json=attackId,proto3" json:"attack_id,omitempty"`
@@ -289,6 +345,7 @@ type DamageApplied struct {
 	Damage              float64                `protobuf:"fixed64,6,opt,name=damage,proto3" json:"damage,omitempty"`
 	RemainingHealth     float64                `protobuf:"fixed64,7,opt,name=remaining_health,json=remainingHealth,proto3" json:"remaining_health,omitempty"`
 	Tick                int64                  `protobuf:"varint,8,opt,name=tick,proto3" json:"tick,omitempty"`
+	ProjectileId        string                 `protobuf:"bytes,9,opt,name=projectile_id,json=projectileId,proto3" json:"projectile_id,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -379,6 +436,13 @@ func (x *DamageApplied) GetTick() int64 {
 	return 0
 }
 
+func (x *DamageApplied) GetProjectileId() string {
+	if x != nil {
+		return x.ProjectileId
+	}
+	return ""
+}
+
 type CharacterDied struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	AttackId          string                 `protobuf:"bytes,1,opt,name=attack_id,json=attackId,proto3" json:"attack_id,omitempty"`
@@ -387,6 +451,7 @@ type CharacterDied struct {
 	TargetUserId      string                 `protobuf:"bytes,4,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`
 	TargetCharacterId string                 `protobuf:"bytes,5,opt,name=target_character_id,json=targetCharacterId,proto3" json:"target_character_id,omitempty"`
 	Tick              int64                  `protobuf:"varint,6,opt,name=tick,proto3" json:"tick,omitempty"`
+	ProjectileId      string                 `protobuf:"bytes,7,opt,name=projectile_id,json=projectileId,proto3" json:"projectile_id,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -463,19 +528,361 @@ func (x *CharacterDied) GetTick() int64 {
 	return 0
 }
 
+func (x *CharacterDied) GetProjectileId() string {
+	if x != nil {
+		return x.ProjectileId
+	}
+	return ""
+}
+
+type ProjectileSpawned struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ProjectileId        string                 `protobuf:"bytes,1,opt,name=projectile_id,json=projectileId,proto3" json:"projectile_id,omitempty"`
+	AttackId            string                 `protobuf:"bytes,2,opt,name=attack_id,json=attackId,proto3" json:"attack_id,omitempty"`
+	AttackerUserId      string                 `protobuf:"bytes,3,opt,name=attacker_user_id,json=attackerUserId,proto3" json:"attacker_user_id,omitempty"`
+	AttackerCharacterId string                 `protobuf:"bytes,4,opt,name=attacker_character_id,json=attackerCharacterId,proto3" json:"attacker_character_id,omitempty"`
+	TargetUserId        string                 `protobuf:"bytes,5,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`
+	TargetCharacterId   string                 `protobuf:"bytes,6,opt,name=target_character_id,json=targetCharacterId,proto3" json:"target_character_id,omitempty"`
+	WeaponType          string                 `protobuf:"bytes,7,opt,name=weapon_type,json=weaponType,proto3" json:"weapon_type,omitempty"`
+	WeaponName          string                 `protobuf:"bytes,8,opt,name=weapon_name,json=weaponName,proto3" json:"weapon_name,omitempty"`
+	Position            *Vector2               `protobuf:"bytes,9,opt,name=position,proto3" json:"position,omitempty"`
+	Direction           *Vector2               `protobuf:"bytes,10,opt,name=direction,proto3" json:"direction,omitempty"`
+	Speed               float64                `protobuf:"fixed64,11,opt,name=speed,proto3" json:"speed,omitempty"`
+	Tick                int64                  `protobuf:"varint,12,opt,name=tick,proto3" json:"tick,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ProjectileSpawned) Reset() {
+	*x = ProjectileSpawned{}
+	mi := &file_modules_game_core_system_combat_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectileSpawned) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectileSpawned) ProtoMessage() {}
+
+func (x *ProjectileSpawned) ProtoReflect() protoreflect.Message {
+	mi := &file_modules_game_core_system_combat_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectileSpawned.ProtoReflect.Descriptor instead.
+func (*ProjectileSpawned) Descriptor() ([]byte, []int) {
+	return file_modules_game_core_system_combat_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ProjectileSpawned) GetProjectileId() string {
+	if x != nil {
+		return x.ProjectileId
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetAttackId() string {
+	if x != nil {
+		return x.AttackId
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetAttackerUserId() string {
+	if x != nil {
+		return x.AttackerUserId
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetAttackerCharacterId() string {
+	if x != nil {
+		return x.AttackerCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetTargetUserId() string {
+	if x != nil {
+		return x.TargetUserId
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetTargetCharacterId() string {
+	if x != nil {
+		return x.TargetCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetWeaponType() string {
+	if x != nil {
+		return x.WeaponType
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetWeaponName() string {
+	if x != nil {
+		return x.WeaponName
+	}
+	return ""
+}
+
+func (x *ProjectileSpawned) GetPosition() *Vector2 {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *ProjectileSpawned) GetDirection() *Vector2 {
+	if x != nil {
+		return x.Direction
+	}
+	return nil
+}
+
+func (x *ProjectileSpawned) GetSpeed() float64 {
+	if x != nil {
+		return x.Speed
+	}
+	return 0
+}
+
+func (x *ProjectileSpawned) GetTick() int64 {
+	if x != nil {
+		return x.Tick
+	}
+	return 0
+}
+
+type ProjectileHit struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ProjectileId        string                 `protobuf:"bytes,1,opt,name=projectile_id,json=projectileId,proto3" json:"projectile_id,omitempty"`
+	AttackId            string                 `protobuf:"bytes,2,opt,name=attack_id,json=attackId,proto3" json:"attack_id,omitempty"`
+	AttackerUserId      string                 `protobuf:"bytes,3,opt,name=attacker_user_id,json=attackerUserId,proto3" json:"attacker_user_id,omitempty"`
+	AttackerCharacterId string                 `protobuf:"bytes,4,opt,name=attacker_character_id,json=attackerCharacterId,proto3" json:"attacker_character_id,omitempty"`
+	TargetUserId        string                 `protobuf:"bytes,5,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`
+	TargetCharacterId   string                 `protobuf:"bytes,6,opt,name=target_character_id,json=targetCharacterId,proto3" json:"target_character_id,omitempty"`
+	Position            *Vector2               `protobuf:"bytes,7,opt,name=position,proto3" json:"position,omitempty"`
+	Tick                int64                  `protobuf:"varint,8,opt,name=tick,proto3" json:"tick,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ProjectileHit) Reset() {
+	*x = ProjectileHit{}
+	mi := &file_modules_game_core_system_combat_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectileHit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectileHit) ProtoMessage() {}
+
+func (x *ProjectileHit) ProtoReflect() protoreflect.Message {
+	mi := &file_modules_game_core_system_combat_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectileHit.ProtoReflect.Descriptor instead.
+func (*ProjectileHit) Descriptor() ([]byte, []int) {
+	return file_modules_game_core_system_combat_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProjectileHit) GetProjectileId() string {
+	if x != nil {
+		return x.ProjectileId
+	}
+	return ""
+}
+
+func (x *ProjectileHit) GetAttackId() string {
+	if x != nil {
+		return x.AttackId
+	}
+	return ""
+}
+
+func (x *ProjectileHit) GetAttackerUserId() string {
+	if x != nil {
+		return x.AttackerUserId
+	}
+	return ""
+}
+
+func (x *ProjectileHit) GetAttackerCharacterId() string {
+	if x != nil {
+		return x.AttackerCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileHit) GetTargetUserId() string {
+	if x != nil {
+		return x.TargetUserId
+	}
+	return ""
+}
+
+func (x *ProjectileHit) GetTargetCharacterId() string {
+	if x != nil {
+		return x.TargetCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileHit) GetPosition() *Vector2 {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *ProjectileHit) GetTick() int64 {
+	if x != nil {
+		return x.Tick
+	}
+	return 0
+}
+
+type ProjectileExpired struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ProjectileId        string                 `protobuf:"bytes,1,opt,name=projectile_id,json=projectileId,proto3" json:"projectile_id,omitempty"`
+	AttackId            string                 `protobuf:"bytes,2,opt,name=attack_id,json=attackId,proto3" json:"attack_id,omitempty"`
+	AttackerUserId      string                 `protobuf:"bytes,3,opt,name=attacker_user_id,json=attackerUserId,proto3" json:"attacker_user_id,omitempty"`
+	AttackerCharacterId string                 `protobuf:"bytes,4,opt,name=attacker_character_id,json=attackerCharacterId,proto3" json:"attacker_character_id,omitempty"`
+	TargetUserId        string                 `protobuf:"bytes,5,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`
+	TargetCharacterId   string                 `protobuf:"bytes,6,opt,name=target_character_id,json=targetCharacterId,proto3" json:"target_character_id,omitempty"`
+	Position            *Vector2               `protobuf:"bytes,7,opt,name=position,proto3" json:"position,omitempty"`
+	Tick                int64                  `protobuf:"varint,8,opt,name=tick,proto3" json:"tick,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ProjectileExpired) Reset() {
+	*x = ProjectileExpired{}
+	mi := &file_modules_game_core_system_combat_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectileExpired) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectileExpired) ProtoMessage() {}
+
+func (x *ProjectileExpired) ProtoReflect() protoreflect.Message {
+	mi := &file_modules_game_core_system_combat_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectileExpired.ProtoReflect.Descriptor instead.
+func (*ProjectileExpired) Descriptor() ([]byte, []int) {
+	return file_modules_game_core_system_combat_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProjectileExpired) GetProjectileId() string {
+	if x != nil {
+		return x.ProjectileId
+	}
+	return ""
+}
+
+func (x *ProjectileExpired) GetAttackId() string {
+	if x != nil {
+		return x.AttackId
+	}
+	return ""
+}
+
+func (x *ProjectileExpired) GetAttackerUserId() string {
+	if x != nil {
+		return x.AttackerUserId
+	}
+	return ""
+}
+
+func (x *ProjectileExpired) GetAttackerCharacterId() string {
+	if x != nil {
+		return x.AttackerCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileExpired) GetTargetUserId() string {
+	if x != nil {
+		return x.TargetUserId
+	}
+	return ""
+}
+
+func (x *ProjectileExpired) GetTargetCharacterId() string {
+	if x != nil {
+		return x.TargetCharacterId
+	}
+	return ""
+}
+
+func (x *ProjectileExpired) GetPosition() *Vector2 {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *ProjectileExpired) GetTick() int64 {
+	if x != nil {
+		return x.Tick
+	}
+	return 0
+}
+
 var File_modules_game_core_system_combat_proto protoreflect.FileDescriptor
 
 const file_modules_game_core_system_combat_proto_rawDesc = "" +
 	"\n" +
-	"%modules/game/core/system/combat.proto\x12\x10game.core.system\"]\n" +
+	"%modules/game/core/system/combat.proto\x12\x10game.core.system\x1a(modules/game/core/system/detection.proto\"]\n" +
 	"\x10CombatEventBatch\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x03R\x04tick\x125\n" +
-	"\x06events\x18\x02 \x03(\v2\x1d.game.core.system.CombatEventR\x06events\"\xf4\x01\n" +
+	"\x06events\x18\x02 \x03(\v2\x1d.game.core.system.CombatEventR\x06events\"\xea\x03\n" +
 	"\vCombatEvent\x12H\n" +
 	"\x0eattack_started\x18\x01 \x01(\v2\x1f.game.core.system.AttackStartedH\x00R\rattackStarted\x12H\n" +
 	"\x0edamage_applied\x18\x02 \x01(\v2\x1f.game.core.system.DamageAppliedH\x00R\rdamageApplied\x12H\n" +
-	"\x0echaracter_died\x18\x03 \x01(\v2\x1f.game.core.system.CharacterDiedH\x00R\rcharacterDiedB\a\n" +
-	"\x05event\"\xe6\x02\n" +
+	"\x0echaracter_died\x18\x03 \x01(\v2\x1f.game.core.system.CharacterDiedH\x00R\rcharacterDied\x12T\n" +
+	"\x12projectile_spawned\x18\x04 \x01(\v2#.game.core.system.ProjectileSpawnedH\x00R\x11projectileSpawned\x12H\n" +
+	"\x0eprojectile_hit\x18\x05 \x01(\v2\x1f.game.core.system.ProjectileHitH\x00R\rprojectileHit\x12T\n" +
+	"\x12projectile_expired\x18\x06 \x01(\v2#.game.core.system.ProjectileExpiredH\x00R\x11projectileExpiredB\a\n" +
+	"\x05event\"\x87\x03\n" +
 	"\rAttackStarted\x12\x1b\n" +
 	"\tattack_id\x18\x01 \x01(\tR\battackId\x12(\n" +
 	"\x10attacker_user_id\x18\x02 \x01(\tR\x0eattackerUserId\x122\n" +
@@ -488,7 +895,10 @@ const file_modules_game_core_system_combat_proto_rawDesc = "" +
 	"start_tick\x18\a \x01(\x03R\tstartTick\x12\x1f\n" +
 	"\vimpact_tick\x18\b \x01(\x03R\n" +
 	"impactTick\x12#\n" +
-	"\rcomplete_tick\x18\t \x01(\x03R\fcompleteTick\"\xb7\x02\n" +
+	"\rcomplete_tick\x18\t \x01(\x03R\fcompleteTick\x12\x1f\n" +
+	"\vweapon_name\x18\n" +
+	" \x01(\tR\n" +
+	"weaponName\"\xdc\x02\n" +
 	"\rDamageApplied\x12\x1b\n" +
 	"\tattack_id\x18\x01 \x01(\tR\battackId\x12(\n" +
 	"\x10attacker_user_id\x18\x02 \x01(\tR\x0eattackerUserId\x122\n" +
@@ -497,14 +907,50 @@ const file_modules_game_core_system_combat_proto_rawDesc = "" +
 	"\x13target_character_id\x18\x05 \x01(\tR\x11targetCharacterId\x12\x16\n" +
 	"\x06damage\x18\x06 \x01(\x01R\x06damage\x12)\n" +
 	"\x10remaining_health\x18\a \x01(\x01R\x0fremainingHealth\x12\x12\n" +
-	"\x04tick\x18\b \x01(\x03R\x04tick\"\xec\x01\n" +
+	"\x04tick\x18\b \x01(\x03R\x04tick\x12#\n" +
+	"\rprojectile_id\x18\t \x01(\tR\fprojectileId\"\x91\x02\n" +
 	"\rCharacterDied\x12\x1b\n" +
 	"\tattack_id\x18\x01 \x01(\tR\battackId\x12$\n" +
 	"\x0ekiller_user_id\x18\x02 \x01(\tR\fkillerUserId\x12.\n" +
 	"\x13killer_character_id\x18\x03 \x01(\tR\x11killerCharacterId\x12$\n" +
 	"\x0etarget_user_id\x18\x04 \x01(\tR\ftargetUserId\x12.\n" +
 	"\x13target_character_id\x18\x05 \x01(\tR\x11targetCharacterId\x12\x12\n" +
-	"\x04tick\x18\x06 \x01(\x03R\x04tickB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
+	"\x04tick\x18\x06 \x01(\x03R\x04tick\x12#\n" +
+	"\rprojectile_id\x18\a \x01(\tR\fprojectileId\"\xe5\x03\n" +
+	"\x11ProjectileSpawned\x12#\n" +
+	"\rprojectile_id\x18\x01 \x01(\tR\fprojectileId\x12\x1b\n" +
+	"\tattack_id\x18\x02 \x01(\tR\battackId\x12(\n" +
+	"\x10attacker_user_id\x18\x03 \x01(\tR\x0eattackerUserId\x122\n" +
+	"\x15attacker_character_id\x18\x04 \x01(\tR\x13attackerCharacterId\x12$\n" +
+	"\x0etarget_user_id\x18\x05 \x01(\tR\ftargetUserId\x12.\n" +
+	"\x13target_character_id\x18\x06 \x01(\tR\x11targetCharacterId\x12\x1f\n" +
+	"\vweapon_type\x18\a \x01(\tR\n" +
+	"weaponType\x12\x1f\n" +
+	"\vweapon_name\x18\b \x01(\tR\n" +
+	"weaponName\x125\n" +
+	"\bposition\x18\t \x01(\v2\x19.game.core.system.Vector2R\bposition\x127\n" +
+	"\tdirection\x18\n" +
+	" \x01(\v2\x19.game.core.system.Vector2R\tdirection\x12\x14\n" +
+	"\x05speed\x18\v \x01(\x01R\x05speed\x12\x12\n" +
+	"\x04tick\x18\f \x01(\x03R\x04tick\"\xd0\x02\n" +
+	"\rProjectileHit\x12#\n" +
+	"\rprojectile_id\x18\x01 \x01(\tR\fprojectileId\x12\x1b\n" +
+	"\tattack_id\x18\x02 \x01(\tR\battackId\x12(\n" +
+	"\x10attacker_user_id\x18\x03 \x01(\tR\x0eattackerUserId\x122\n" +
+	"\x15attacker_character_id\x18\x04 \x01(\tR\x13attackerCharacterId\x12$\n" +
+	"\x0etarget_user_id\x18\x05 \x01(\tR\ftargetUserId\x12.\n" +
+	"\x13target_character_id\x18\x06 \x01(\tR\x11targetCharacterId\x125\n" +
+	"\bposition\x18\a \x01(\v2\x19.game.core.system.Vector2R\bposition\x12\x12\n" +
+	"\x04tick\x18\b \x01(\x03R\x04tick\"\xd4\x02\n" +
+	"\x11ProjectileExpired\x12#\n" +
+	"\rprojectile_id\x18\x01 \x01(\tR\fprojectileId\x12\x1b\n" +
+	"\tattack_id\x18\x02 \x01(\tR\battackId\x12(\n" +
+	"\x10attacker_user_id\x18\x03 \x01(\tR\x0eattackerUserId\x122\n" +
+	"\x15attacker_character_id\x18\x04 \x01(\tR\x13attackerCharacterId\x12$\n" +
+	"\x0etarget_user_id\x18\x05 \x01(\tR\ftargetUserId\x12.\n" +
+	"\x13target_character_id\x18\x06 \x01(\tR\x11targetCharacterId\x125\n" +
+	"\bposition\x18\a \x01(\v2\x19.game.core.system.Vector2R\bposition\x12\x12\n" +
+	"\x04tick\x18\b \x01(\x03R\x04tickB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
 
 var (
 	file_modules_game_core_system_combat_proto_rawDescOnce sync.Once
@@ -518,24 +964,35 @@ func file_modules_game_core_system_combat_proto_rawDescGZIP() []byte {
 	return file_modules_game_core_system_combat_proto_rawDescData
 }
 
-var file_modules_game_core_system_combat_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_modules_game_core_system_combat_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_modules_game_core_system_combat_proto_goTypes = []any{
-	(*CombatEventBatch)(nil), // 0: game.core.system.CombatEventBatch
-	(*CombatEvent)(nil),      // 1: game.core.system.CombatEvent
-	(*AttackStarted)(nil),    // 2: game.core.system.AttackStarted
-	(*DamageApplied)(nil),    // 3: game.core.system.DamageApplied
-	(*CharacterDied)(nil),    // 4: game.core.system.CharacterDied
+	(*CombatEventBatch)(nil),  // 0: game.core.system.CombatEventBatch
+	(*CombatEvent)(nil),       // 1: game.core.system.CombatEvent
+	(*AttackStarted)(nil),     // 2: game.core.system.AttackStarted
+	(*DamageApplied)(nil),     // 3: game.core.system.DamageApplied
+	(*CharacterDied)(nil),     // 4: game.core.system.CharacterDied
+	(*ProjectileSpawned)(nil), // 5: game.core.system.ProjectileSpawned
+	(*ProjectileHit)(nil),     // 6: game.core.system.ProjectileHit
+	(*ProjectileExpired)(nil), // 7: game.core.system.ProjectileExpired
+	(*Vector2)(nil),           // 8: game.core.system.Vector2
 }
 var file_modules_game_core_system_combat_proto_depIdxs = []int32{
-	1, // 0: game.core.system.CombatEventBatch.events:type_name -> game.core.system.CombatEvent
-	2, // 1: game.core.system.CombatEvent.attack_started:type_name -> game.core.system.AttackStarted
-	3, // 2: game.core.system.CombatEvent.damage_applied:type_name -> game.core.system.DamageApplied
-	4, // 3: game.core.system.CombatEvent.character_died:type_name -> game.core.system.CharacterDied
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1,  // 0: game.core.system.CombatEventBatch.events:type_name -> game.core.system.CombatEvent
+	2,  // 1: game.core.system.CombatEvent.attack_started:type_name -> game.core.system.AttackStarted
+	3,  // 2: game.core.system.CombatEvent.damage_applied:type_name -> game.core.system.DamageApplied
+	4,  // 3: game.core.system.CombatEvent.character_died:type_name -> game.core.system.CharacterDied
+	5,  // 4: game.core.system.CombatEvent.projectile_spawned:type_name -> game.core.system.ProjectileSpawned
+	6,  // 5: game.core.system.CombatEvent.projectile_hit:type_name -> game.core.system.ProjectileHit
+	7,  // 6: game.core.system.CombatEvent.projectile_expired:type_name -> game.core.system.ProjectileExpired
+	8,  // 7: game.core.system.ProjectileSpawned.position:type_name -> game.core.system.Vector2
+	8,  // 8: game.core.system.ProjectileSpawned.direction:type_name -> game.core.system.Vector2
+	8,  // 9: game.core.system.ProjectileHit.position:type_name -> game.core.system.Vector2
+	8,  // 10: game.core.system.ProjectileExpired.position:type_name -> game.core.system.Vector2
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_modules_game_core_system_combat_proto_init() }
@@ -543,10 +1000,14 @@ func file_modules_game_core_system_combat_proto_init() {
 	if File_modules_game_core_system_combat_proto != nil {
 		return
 	}
+	file_modules_game_core_system_detection_proto_init()
 	file_modules_game_core_system_combat_proto_msgTypes[1].OneofWrappers = []any{
 		(*CombatEvent_AttackStarted)(nil),
 		(*CombatEvent_DamageApplied)(nil),
 		(*CombatEvent_CharacterDied)(nil),
+		(*CombatEvent_ProjectileSpawned)(nil),
+		(*CombatEvent_ProjectileHit)(nil),
+		(*CombatEvent_ProjectileExpired)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -554,7 +1015,7 @@ func file_modules_game_core_system_combat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_modules_game_core_system_combat_proto_rawDesc), len(file_modules_game_core_system_combat_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

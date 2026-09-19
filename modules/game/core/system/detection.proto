@@ -8,6 +8,7 @@ message PlayerDetectionSnapshot {
   int64 tick = 1;
   repeated DetectedPlayer players = 2;
   DetectedPlayer self = 3;
+  repeated ProjectileSnapshot projectiles = 4;
 }
 
 message DetectedPlayer {
@@ -38,4 +39,19 @@ message CharacterSnapshot {
   double max_health = 10;
   string character_id = 11;
   string range_class = 12;
+  string weapon_name = 13;
+}
+
+message ProjectileSnapshot {
+  string projectile_id = 1;
+  string attack_id = 2;
+  string attacker_user_id = 3;
+  string attacker_character_id = 4;
+  string target_user_id = 5;
+  string target_character_id = 6;
+  string weapon_type = 7;
+  string weapon_name = 8;
+  Vector2 position = 9;
+  Vector2 direction = 10;
+  double speed = 11;
 }

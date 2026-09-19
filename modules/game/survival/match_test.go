@@ -280,16 +280,22 @@ func TestMatchLoopSendsPersonalizedDetectionSnapshots(t *testing.T) {
 		data:         mustMarshalMovementInput(t, &entity.MovementInput{X: 1, Sequence: 1}),
 	}
 	match.MatchLoop(nil, nil, nil, nil, dispatcher, 9, state, []runtime.MatchData{movement})
-	if len(dispatcher.broadcasts) != 3 {
-		t.Fatalf("expected one detection snapshot per player, got %d", len(dispatcher.broadcasts))
+	detectionBroadcasts := make([]testBroadcast, 0, 3)
+	for _, broadcast := range dispatcher.broadcasts {
+		if broadcast.opCode == system.OpPlayerDetectionSnapshot {
+			detectionBroadcasts = append(detectionBroadcasts, broadcast)
+		}
+	}
+	if len(detectionBroadcasts) != 3 {
+		t.Fatalf("expected one detection snapshot per player, got %d", len(detectionBroadcasts))
 	}
 	want := map[string][]string{
 		playerA.SessionID: {playerB.SessionID},
 		playerB.SessionID: {playerA.SessionID, playerC.SessionID},
 		playerC.SessionID: {},
 	}
-	for _, broadcast := range dispatcher.broadcasts {
-		if broadcast.opCode != system.OpPlayerDetectionSnapshot || broadcast.reliable {
+	for _, broadcast := range detectionBroadcasts {
+		if broadcast.reliable {
 			t.Fatalf("unexpected detection broadcast: opcode=%d reliable=%v", broadcast.opCode, broadcast.reliable)
 		}
 		if len(broadcast.presences) != 1 {
