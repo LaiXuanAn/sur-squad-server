@@ -47,6 +47,7 @@ func (p *Player) AddCharacter(character *Character) error {
 	}
 
 	p.Characters = append(p.Characters, character)
+	p.assignCharacterID(character)
 	if err := AssignCharacterTargets(p); err != nil {
 		p.Characters = p.Characters[:len(p.Characters)-1]
 		return err
@@ -132,7 +133,7 @@ func rangeClassPriority(rangeClass RangeClass) int {
 	switch rangeClass {
 	case RangeRanged:
 		return 0
-	case RangeMedium:
+	case RangeReach:
 		return 1
 	case RangeMelee:
 		return 2

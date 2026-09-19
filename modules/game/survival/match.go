@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"time"
 
+	"squad-survival-be/modules/game/core/combat"
 	"squad-survival-be/modules/game/core/entity"
 	"squad-survival-be/modules/game/core/spatial"
 	"squad-survival-be/modules/game/core/system"
@@ -196,7 +197,10 @@ func (m *Match) MatchLoop(_ context.Context, logger runtime.Logger, _ *sql.DB, _
 			logger.Error("Could not move player in spatial grid: session_id=%s error=%v", player.SessionID, err)
 		}
 	}
-	state.broadcastDetectionSnapshots(logger, dispatcher, tick)
+	nearbyPlayers := state.queryNearbyPlayers()
+	combatEvents := combat.Step(state.Players, tick, state.random)
+	state.broadcastCombatEvents(logger, dispatcher, tick, combatEvents, nearbyPlayers)
+	state.broadcastDetectionSnapshots(logger, dispatcher, tick, nearbyPlayers)
 
 	if len(state.Players) == 0 && len(state.Reservations) == 0 {
 		state.EmptyTicks++
@@ -249,7 +253,57 @@ func (s *State) broadcastSnapshot(logger runtime.Logger, dispatcher runtime.Matc
 	}
 }
 
-func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64) {
+func (s *State) queryNearbyPlayers() map[string][]*entity.Player {
+	nearbyPlayers := make(map[string][]*entity.Player, len(s.Players))
+	for sessionID, player := range s.Players {
+		nearbyPlayers[sessionID] = s.SpatialGrid.QueryPlayers(player)
+	}
+	return nearbyPlayers
+}
+
+func (s *State) broadcastCombatEvents(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64, events []combat.Event, nearbyPlayers map[string][]*entity.Player) {
+	if len(events) == 0 {
+		return
+	}
+	for sessionID, player := range s.Players {
+		presence, ok := s.Presences[sessionID]
+		if !ok {
+			continue
+		}
+		relevant := relevantCombatEvents(player, nearbyPlayers[sessionID], events)
+		if len(relevant) == 0 {
+			continue
+		}
+		payload, err := system.EncodeCombatEventBatch(tick, relevant)
+		if err == nil {
+			err = dispatcher.BroadcastMessage(system.OpCombatEventBatch, payload, []runtime.Presence{presence}, nil, true)
+		}
+		if err != nil && logger != nil {
+			logger.Error("Could not send combat events: session_id=%s error=%v", sessionID, err)
+		}
+	}
+}
+
+func relevantCombatEvents(player *entity.Player, nearby []*entity.Player, events []combat.Event) []combat.Event {
+	visibleUsers := make(map[string]struct{}, len(nearby)+1)
+	visibleUsers[player.UserID] = struct{}{}
+	for _, detected := range nearby {
+		if detected != nil {
+			visibleUsers[detected.UserID] = struct{}{}
+		}
+	}
+	relevant := make([]combat.Event, 0)
+	for _, event := range events {
+		_, seesAttacker := visibleUsers[event.AttackerUserID]
+		_, seesTarget := visibleUsers[event.TargetUserID]
+		if seesAttacker || seesTarget {
+			relevant = append(relevant, event)
+		}
+	}
+	return relevant
+}
+
+func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher runtime.MatchDispatcher, tick int64, nearbyPlayers map[string][]*entity.Player) {
 	for sessionID, player := range s.Players {
 		presence, ok := s.Presences[sessionID]
 		if !ok {
@@ -259,7 +313,7 @@ func (s *State) broadcastDetectionSnapshots(logger runtime.Logger, dispatcher ru
 			continue
 		}
 
-		payload, err := system.EncodePlayerDetectionSnapshot(tick, player, s.SpatialGrid.QueryPlayers(player))
+		payload, err := system.EncodePlayerDetectionSnapshot(tick, player, nearbyPlayers[sessionID])
 		if err == nil {
 			err = dispatcher.BroadcastMessage(system.OpPlayerDetectionSnapshot, payload, []runtime.Presence{presence}, nil, false)
 		}

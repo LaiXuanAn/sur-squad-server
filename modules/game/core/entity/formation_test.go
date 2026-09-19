@@ -20,8 +20,8 @@ func TestAssignCharacterTargetsPrioritizesRangeClass(t *testing.T) {
 	player := newTestPlayer(Vector2{})
 	melee := &Character{RangeClass: RangeMelee, AttackRange: 100, MoveSpeed: 5}
 	ranged := &Character{RangeClass: RangeRanged, AttackRange: 1, MoveSpeed: 5}
-	medium := &Character{RangeClass: RangeMedium, AttackRange: 50, MoveSpeed: 5}
-	player.Characters = []*Character{melee, ranged, medium}
+	reach := &Character{RangeClass: RangeReach, AttackRange: 50, MoveSpeed: 5}
+	player.Characters = []*Character{melee, ranged, reach}
 	if err := AssignCharacterTargets(player); err != nil {
 		t.Fatal(err)
 	}
@@ -29,8 +29,8 @@ func TestAssignCharacterTargetsPrioritizesRangeClass(t *testing.T) {
 	if ranged.TargetPosition != (Vector2{}) {
 		t.Fatalf("expected ranged character at center, got %+v", ranged.TargetPosition)
 	}
-	if medium.TargetPosition != (Vector2{X: strategy.SlotSpacing}) {
-		t.Fatalf("unexpected medium character target: %+v", medium.TargetPosition)
+	if reach.TargetPosition != (Vector2{X: strategy.SlotSpacing}) {
+		t.Fatalf("unexpected reach character target: %+v", reach.TargetPosition)
 	}
 	if melee.TargetPosition != (Vector2{Y: strategy.SlotSpacing}) {
 		t.Fatalf("unexpected melee character target: %+v", melee.TargetPosition)

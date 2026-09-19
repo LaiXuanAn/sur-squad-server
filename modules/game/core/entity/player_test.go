@@ -45,6 +45,22 @@ func TestPlayerUsesSlowestCharacterMoveSpeed(t *testing.T) {
 	}
 }
 
+func TestPlayerAssignsStableUniqueCharacterIDs(t *testing.T) {
+	player := newTestPlayer(Vector2{})
+	firstID := player.Characters[0].ID
+	second := NewCharacter()
+	if err := player.AddCharacter(second); err != nil {
+		t.Fatal(err)
+	}
+	if firstID != player.UserID+":1" || second.ID != player.UserID+":2" {
+		t.Fatalf("unexpected character IDs: first=%q second=%q", firstID, second.ID)
+	}
+	player.RemoveCharacterAt(0)
+	if second.ID != player.UserID+":2" {
+		t.Fatalf("character ID changed after compaction: %q", second.ID)
+	}
+}
+
 func TestPlayerWithoutCharactersCannotMove(t *testing.T) {
 	player := newTestPlayer(Vector2{})
 	player.Characters = nil

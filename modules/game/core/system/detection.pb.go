@@ -237,6 +237,8 @@ type CharacterSnapshot struct {
 	WeaponType    string                 `protobuf:"bytes,8,opt,name=weapon_type,json=weaponType,proto3" json:"weapon_type,omitempty"`
 	Position      *Vector2               `protobuf:"bytes,9,opt,name=position,proto3" json:"position,omitempty"`
 	MaxHealth     float64                `protobuf:"fixed64,10,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"`
+	CharacterId   string                 `protobuf:"bytes,11,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	RangeClass    string                 `protobuf:"bytes,12,opt,name=range_class,json=rangeClass,proto3" json:"range_class,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -341,6 +343,20 @@ func (x *CharacterSnapshot) GetMaxHealth() float64 {
 	return 0
 }
 
+func (x *CharacterSnapshot) GetCharacterId() string {
+	if x != nil {
+		return x.CharacterId
+	}
+	return ""
+}
+
+func (x *CharacterSnapshot) GetRangeClass() string {
+	if x != nil {
+		return x.RangeClass
+	}
+	return ""
+}
+
 var File_modules_game_core_system_detection_proto protoreflect.FileDescriptor
 
 const file_modules_game_core_system_detection_proto_rawDesc = "" +
@@ -363,7 +379,7 @@ const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"characters\"%\n" +
 	"\aVector2\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x01R\x01y\"\xe1\x02\n" +
+	"\x01y\x18\x02 \x01(\x01R\x01y\"\xa5\x03\n" +
 	"\x11CharacterSnapshot\x12\x16\n" +
 	"\x06health\x18\x01 \x01(\x01R\x06health\x12\x16\n" +
 	"\x06damage\x18\x02 \x01(\x01R\x06damage\x12\x1d\n" +
@@ -379,7 +395,10 @@ const file_modules_game_core_system_detection_proto_rawDesc = "" +
 	"\bposition\x18\t \x01(\v2\x19.game.core.system.Vector2R\bposition\x12\x1d\n" +
 	"\n" +
 	"max_health\x18\n" +
-	" \x01(\x01R\tmaxHealthB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
+	" \x01(\x01R\tmaxHealth\x12!\n" +
+	"\fcharacter_id\x18\v \x01(\tR\vcharacterId\x12\x1f\n" +
+	"\vrange_class\x18\f \x01(\tR\n" +
+	"rangeClassB3Z1squad-survival-be/modules/game/core/system;systemb\x06proto3"
 
 var (
 	file_modules_game_core_system_detection_proto_rawDescOnce sync.Once

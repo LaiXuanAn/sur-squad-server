@@ -36,4 +36,6 @@ message CharacterSnapshot {
   string weapon_type = 8;
   Vector2 position = 9;
   double max_health = 10;
+  string character_id = 11;
+  string range_class = 12;
 }

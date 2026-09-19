@@ -48,6 +48,9 @@ func TestEncodePlayerDetectionSnapshot(t *testing.T) {
 	}
 	character := detected.Characters[0]
 	source := player.Characters[0]
+	if character.CharacterId != source.ID || character.RangeClass != string(source.RangeClass) {
+		t.Fatalf("unexpected character identity: %+v", character)
+	}
 	if character.Health != source.Health || character.MaxHealth != source.MaxHealth || character.Damage != source.Damage ||
 		character.MoveSpeed != source.MoveSpeed || character.AttackSpeed != source.AttackSpeed ||
 		character.AttackRange != source.AttackRange || character.RegenRate != source.RegenRate ||

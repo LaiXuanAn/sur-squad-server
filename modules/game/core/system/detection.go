@@ -31,6 +31,8 @@ func playerSnapshot(player *entity.Player) *DetectedPlayer {
 			continue
 		}
 		characters = append(characters, &CharacterSnapshot{
+			CharacterId: character.ID,
+			RangeClass:  string(character.RangeClass),
 			Health:      character.Health,
 			MaxHealth:   character.MaxHealth,
 			Damage:      character.Damage,

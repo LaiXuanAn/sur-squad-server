@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package game.core.system;
+
+option go_package = "squad-survival-be/modules/game/core/system;system";
+
+message CombatEventBatch {
+  int64 tick = 1;
+  repeated CombatEvent events = 2;
+}
+
+message CombatEvent {
+  oneof event {
+    AttackStarted attack_started = 1;
+    DamageApplied damage_applied = 2;
+    CharacterDied character_died = 3;
+  }
+}
+
+message AttackStarted {
+  string attack_id = 1;
+  string attacker_user_id = 2;
+  string attacker_character_id = 3;
+  string target_user_id = 4;
+  string target_character_id = 5;
+  string weapon_type = 6;
+  int64 start_tick = 7;
+  int64 impact_tick = 8;
+  int64 complete_tick = 9;
+}
+
+message DamageApplied {
+  string attack_id = 1;
+  string attacker_user_id = 2;
+  string attacker_character_id = 3;
+  string target_user_id = 4;
+  string target_character_id = 5;
+  double damage = 6;
+  double remaining_health = 7;
+  int64 tick = 8;
+}
+
+message CharacterDied {
+  string attack_id = 1;
+  string killer_user_id = 2;
+  string killer_character_id = 3;
+  string target_user_id = 4;
+  string target_character_id = 5;
+  int64 tick = 6;
+}

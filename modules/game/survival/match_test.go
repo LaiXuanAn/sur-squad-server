@@ -324,6 +324,76 @@ func TestMatchLoopSendsPersonalizedDetectionSnapshots(t *testing.T) {
 	}
 }
 
+func TestMatchLoopSendsReliableCombatEventsToRelevantViewers(t *testing.T) {
+	match := &Match{}
+	dispatcher := &testDispatcher{}
+	random := rand.New(rand.NewSource(2))
+	playerA := entity.NewPlayer("user-a", "session-a", "Player A", entity.Vector2{}, random)
+	playerB := entity.NewPlayer("user-b", "session-b", "Player B", entity.Vector2{X: 1}, random)
+	playerC := entity.NewPlayer("user-c", "session-c", "Player C", entity.Vector2{X: 30}, random)
+	for _, player := range []*entity.Player{playerA, playerB} {
+		character := player.Characters[0]
+		character.RangeClass = entity.RangeMelee
+		character.AttackRange = 2
+		character.AttackSpeed = 2
+		character.ImpactRatio = 0.5
+		character.Position = player.Position
+	}
+	playerC.Characters[0].RangeClass = entity.RangeRanged
+	grid := spatial.NewGrid(spatialCellSize)
+	for _, player := range []*entity.Player{playerA, playerB, playerC} {
+		if err := grid.Insert(player); err != nil {
+			t.Fatal(err)
+		}
+	}
+	state := &State{
+		Mode:                DefaultMode,
+		AllowJoinInProgress: true,
+		Players: map[string]*entity.Player{
+			playerA.SessionID: playerA,
+			playerB.SessionID: playerB,
+			playerC.SessionID: playerC,
+		},
+		Presences: map[string]runtime.Presence{
+			playerA.SessionID: testPresence{userID: playerA.UserID, sessionID: playerA.SessionID},
+			playerB.SessionID: testPresence{userID: playerB.UserID, sessionID: playerB.SessionID},
+			playerC.SessionID: testPresence{userID: playerC.UserID, sessionID: playerC.SessionID},
+		},
+		Reservations: make(map[string]int64),
+		SpatialGrid:  grid,
+		random:       random,
+	}
+
+	match.MatchLoop(nil, nil, nil, nil, dispatcher, 1, state, nil)
+	combatRecipients := make(map[string]bool)
+	detectionCount := 0
+	for _, broadcast := range dispatcher.broadcasts {
+		switch broadcast.opCode {
+		case system.OpCombatEventBatch:
+			if !broadcast.reliable || len(broadcast.presences) != 1 {
+				t.Fatalf("unexpected combat broadcast: %+v", broadcast)
+			}
+			recipient := broadcast.presences[0].GetSessionId()
+			combatRecipients[recipient] = true
+			var batch system.CombatEventBatch
+			if err := proto.Unmarshal(broadcast.data, &batch); err != nil {
+				t.Fatal(err)
+			}
+			if batch.Tick != 1 || len(batch.Events) != 2 {
+				t.Fatalf("unexpected combat batch for %s: %+v", recipient, &batch)
+			}
+		case system.OpPlayerDetectionSnapshot:
+			detectionCount++
+		}
+	}
+	if !combatRecipients[playerA.SessionID] || !combatRecipients[playerB.SessionID] || combatRecipients[playerC.SessionID] {
+		t.Fatalf("unexpected combat recipients: %+v", combatRecipients)
+	}
+	if detectionCount != 3 {
+		t.Fatalf("expected three detection snapshots, got %d", detectionCount)
+	}
+}
+
 func mustMarshalMovementInput(t *testing.T, input *entity.MovementInput) []byte {
 	t.Helper()
 	data, err := proto.Marshal(input)

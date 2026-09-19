@@ -24,7 +24,7 @@ const (
 
 const (
 	RangeMelee  RangeClass = "melee"
-	RangeMedium RangeClass = "medium"
+	RangeReach  RangeClass = "reach"
 	RangeRanged RangeClass = "ranged"
 )
 
@@ -36,6 +36,7 @@ type Weapon struct {
 	MoveSpeed   float64    `json:"move_speed"` // World units per second.
 	AttackSpeed float64    `json:"attack_speed"`
 	AttackRange float64    `json:"attack_range"`
+	ImpactRatio float64    `json:"impact_ratio"`
 	RegenRate   float64    `json:"regen_rate"`
 	DamageRatio float64    `json:"damage_ratio"`
 }
@@ -60,14 +61,20 @@ func ParseWeaponCatalog(data []byte) ([]Weapon, error) {
 			return nil, errors.New("weapon type is required")
 		}
 		if !weapon.RangeClass.Valid() {
-			return nil, errors.New("weapon range class must be melee, medium, or ranged")
+			return nil, errors.New("weapon range class must be melee, reach, or ranged")
+		}
+		if !isFinite(weapon.AttackSpeed) || weapon.AttackSpeed <= 0 {
+			return nil, errors.New("weapon attack speed must be finite and greater than zero")
+		}
+		if !isFinite(weapon.ImpactRatio) || weapon.ImpactRatio <= 0 || weapon.ImpactRatio > 1 {
+			return nil, errors.New("weapon impact ratio must be finite and within (0, 1]")
 		}
 	}
 	return catalog.Weapons, nil
 }
 
 func (r RangeClass) Valid() bool {
-	return r == RangeMelee || r == RangeMedium || r == RangeRanged
+	return r == RangeMelee || r == RangeReach || r == RangeRanged
 }
 
 func DefaultWeaponCatalog() []Weapon {

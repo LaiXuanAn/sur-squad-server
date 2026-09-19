@@ -3,6 +3,7 @@ package entity
 import (
 	"math"
 	"math/rand"
+	"strconv"
 
 	"squad-survival-be/modules/game/core/strategy"
 	"squad-survival-be/modules/game/core/world"
@@ -17,18 +18,19 @@ const (
 type Vector2 = world.Vector2
 
 type Player struct {
-	UserID          string
-	SessionID       string
-	DisplayName     string
-	Position        Vector2
-	Facing          Vector2
-	Direction       Vector2
-	LastSequence    uint64
-	HasSequence     bool
-	LastInputTick   int64
-	Characters      []*Character
-	DetectionRadius float64
-	Strategy        strategy.Definition
+	UserID                string
+	SessionID             string
+	DisplayName           string
+	Position              Vector2
+	Facing                Vector2
+	Direction             Vector2
+	LastSequence          uint64
+	HasSequence           bool
+	LastInputTick         int64
+	Characters            []*Character
+	DetectionRadius       float64
+	Strategy              strategy.Definition
+	nextCharacterSequence uint64
 }
 
 func NewPlayer(userID, sessionID, displayName string, position Vector2, random *rand.Rand) *Player {
@@ -36,16 +38,18 @@ func NewPlayer(userID, sessionID, displayName string, position Vector2, random *
 	if !ok {
 		panic("default compact strategy not found")
 	}
+	character := CreateCharacter(random, DefaultWeaponCatalog())
 	player := &Player{
 		UserID:          userID,
 		SessionID:       sessionID,
 		DisplayName:     displayName,
 		Position:        world.ClampToPlayArea(position),
 		Facing:          Vector2{X: 1},
-		Characters:      []*Character{CreateCharacter(random, DefaultWeaponCatalog())},
+		Characters:      []*Character{character},
 		DetectionRadius: DefaultDetectionRadius,
 		Strategy:        definition,
 	}
+	player.assignCharacterID(character)
 	if err := AssignCharacterTargets(player); err != nil {
 		panic("could not initialize player strategy: " + err.Error())
 	}
@@ -115,6 +119,14 @@ func (p *Player) CharactersByRangeClass(rangeClass RangeClass) []*Character {
 		}
 	}
 	return characters
+}
+
+func (p *Player) assignCharacterID(character *Character) {
+	if character == nil || character.ID != "" {
+		return
+	}
+	p.nextCharacterSequence++
+	character.ID = p.UserID + ":" + strconv.FormatUint(p.nextCharacterSequence, 10)
 }
 
 func NormalizeDirection(direction Vector2) Vector2 {

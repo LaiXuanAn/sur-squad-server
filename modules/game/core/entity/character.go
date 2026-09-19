@@ -12,18 +12,27 @@ const (
 )
 
 type Character struct {
-	Weapon         Weapon
-	RangeClass     RangeClass
-	Position       Vector2
-	TargetPosition Vector2
-	Health         float64
-	MaxHealth      float64
-	Damage         float64
-	MoveSpeed      float64 // World units per second.
-	AttackSpeed    float64
-	AttackRange    float64
-	RegenRate      float64
-	DamageRatio    float64
+	ID                 string
+	Weapon             Weapon
+	RangeClass         RangeClass
+	Position           Vector2
+	TargetPosition     Vector2
+	Health             float64
+	MaxHealth          float64
+	Damage             float64
+	MoveSpeed          float64 // World units per second.
+	AttackSpeed        float64
+	AttackRange        float64
+	ImpactRatio        float64
+	RegenRate          float64
+	DamageRatio        float64
+	TargetUserID       string
+	TargetCharacterID  string
+	AttackSequence     uint64
+	AttackStartTick    int64
+	AttackImpactTick   int64
+	AttackCompleteTick int64
+	AttackImpacted     bool
 }
 
 func CreateCharacter(random *rand.Rand, weapons []Weapon) *Character {
@@ -41,8 +50,18 @@ func (c *Character) ApplyWeapon(weapon Weapon) {
 	c.MoveSpeed = weapon.MoveSpeed
 	c.AttackSpeed = weapon.AttackSpeed
 	c.AttackRange = weapon.AttackRange
+	c.ImpactRatio = weapon.ImpactRatio
 	c.RegenRate = weapon.RegenRate
 	c.DamageRatio = weapon.DamageRatio
+}
+
+func (c *Character) ResetAttack() {
+	c.TargetUserID = ""
+	c.TargetCharacterID = ""
+	c.AttackStartTick = 0
+	c.AttackImpactTick = 0
+	c.AttackCompleteTick = 0
+	c.AttackImpacted = false
 }
 
 func NewCharacter() *Character {

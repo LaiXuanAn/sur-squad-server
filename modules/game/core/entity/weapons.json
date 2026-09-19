@@ -8,6 +8,7 @@
       "move_speed": 6.2,
       "attack_speed": 1.8,
       "attack_range": 1.2,
+      "impact_ratio": 0.35,
       "regen_rate": 0,
       "damage_ratio": 1.15
     },
@@ -19,6 +20,7 @@
       "move_speed": 5.3,
       "attack_speed": 1.15,
       "attack_range": 8,
+      "impact_ratio": 0.55,
       "regen_rate": 0,
       "damage_ratio": 1.2
     },
@@ -30,17 +32,19 @@
       "move_speed": 4.6,
       "attack_speed": 0.9,
       "attack_range": 6.5,
+      "impact_ratio": 0.6,
       "regen_rate": 0.8,
       "damage_ratio": 1.15
     },
     {
       "type": "spear",
-      "range_class": "medium",
+      "range_class": "reach",
       "health": 110,
       "damage": 12,
       "move_speed": 4.9,
       "attack_speed": 1.05,
       "attack_range": 3.2,
+      "impact_ratio": 0.5,
       "regen_rate": 0,
       "damage_ratio": 1.1
     },
@@ -52,6 +56,7 @@
       "move_speed": 5,
       "attack_speed": 1.2,
       "attack_range": 1.8,
+      "impact_ratio": 0.45,
       "regen_rate": 0.2,
       "damage_ratio": 1.1
     },
@@ -63,6 +68,7 @@
       "move_speed": 5.1,
       "attack_speed": 1,
       "attack_range": 7,
+      "impact_ratio": 0.45,
       "regen_rate": 1.2,
       "damage_ratio": 1.25
     },
@@ -74,6 +80,7 @@
       "move_speed": 4.2,
       "attack_speed": 0.75,
       "attack_range": 1.7,
+      "impact_ratio": 0.6,
       "regen_rate": 0,
       "damage_ratio": 1.2
     },
@@ -85,6 +92,7 @@
       "move_speed": 3.9,
       "attack_speed": 0.7,
       "attack_range": 1.6,
+      "impact_ratio": 0.65,
       "regen_rate": 0.4,
       "damage_ratio": 1.1
     }
