@@ -103,6 +103,30 @@ func TestLeavingRangeCancelsAndResetsAttack(t *testing.T) {
 	}
 }
 
+func TestMovementInputControlsAttackEligibility(t *testing.T) {
+	attacker := combatPlayer("a", "a:1", entity.RangeMelee, entity.Vector2{}, 2, 0.5)
+	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 1}, 2, 0.5)
+	random := rand.New(rand.NewSource(1))
+	players := playerMap(attacker, target)
+	simulation := NewSimulation()
+
+	attacker.Direction = entity.Vector2{X: 0.19, Y: -0.19}
+	if findEvent(simulation.Step(players, 1, random), EventAttackStarted, "a:1") == nil {
+		t.Fatal("expected input below movement threshold to allow attack")
+	}
+	attacker.Direction = entity.Vector2{X: 0.2}
+	events := simulation.Step(players, 2, random)
+	if attacker.Characters[0].TargetCharacterID != "" {
+		t.Fatalf("movement did not reset active attack: %+v", attacker.Characters[0])
+	}
+	if findEvent(events, EventDamageApplied, "a:1") != nil {
+		t.Fatalf("movement above threshold allowed damage: %+v", events)
+	}
+	if findEvent(events, EventAttackStarted, "a:1") != nil {
+		t.Fatalf("movement above threshold started another attack: %+v", events)
+	}
+}
+
 func TestTargetDeathBeforeImpactCancelsAttack(t *testing.T) {
 	attacker := combatPlayer("a", "a:1", entity.RangeMelee, entity.Vector2{}, 2, 0.5)
 	target := combatPlayer("b", "b:1", entity.RangeMelee, entity.Vector2{X: 1}, 2, 0.5)

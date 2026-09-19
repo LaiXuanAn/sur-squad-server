@@ -11,6 +11,8 @@ import (
 
 type EventType uint8
 
+const AttackMovementThreshold = 0.2
+
 const (
 	EventAttackStarted EventType = iota + 1
 	EventDamageApplied
@@ -83,7 +85,7 @@ func (s *Simulation) Step(players map[string]*entity.Player, tick int64, random 
 
 	for _, attacker := range characters {
 		character := attacker.character
-		if !canAttack(character) {
+		if !canAttack(attacker) {
 			character.ResetAttack()
 			continue
 		}
@@ -124,7 +126,7 @@ func (s *Simulation) Step(players map[string]*entity.Player, tick int64, random 
 				character.ResetAttack()
 			}
 		}
-		if !canAttack(character) || character.TargetCharacterID != "" {
+		if !canAttack(attacker) || character.TargetCharacterID != "" {
 			continue
 		}
 		if target, ok := nearestTarget(attacker, characters); ok {
@@ -270,8 +272,12 @@ func nearestTarget(attacker ownedCharacter, characters []ownedCharacter) (ownedC
 	return selected, found
 }
 
-func canAttack(character *entity.Character) bool {
+func canAttack(attacker ownedCharacter) bool {
+	character := attacker.character
 	if character == nil || character.ID == "" || character.Health <= 0 || character.AttackSpeed <= 0 || character.AttackRange < 0 || character.ImpactRatio <= 0 || character.ImpactRatio > 1 {
+		return false
+	}
+	if math.Abs(attacker.owner.Direction.X) >= AttackMovementThreshold || math.Abs(attacker.owner.Direction.Y) >= AttackMovementThreshold {
 		return false
 	}
 	if character.RangeClass == entity.RangeRanged {

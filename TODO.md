@@ -10,3 +10,8 @@
 - Keep disconnected players out of movement input processing and personalized detection broadcasts while their state is retained.
 - The client only needs to reconnect, authenticate, and join the same match; the server restores the retained player state by `UserID`.
 - Add tests for reconnecting within the grace period, expiry cleanup, changed session IDs, duplicate active sessions, capacity handling, and spatial-grid consistency.
+
+# Gameplay Protocol
+
+- Add and decode a client input opcode for selecting or changing the player's strategy formation; the server currently always uses the default `compact` strategy.
+- Replace the temporary `impact_ratio` values in `weapons.json` with values matched to the final Unity attack animations; combat currently uses these defaults to calculate `impact_tick`.
