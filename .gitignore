@@ -15,3 +15,6 @@ coverage.*
 go.work
 go.work.sum
 vendor/
+
+# Generated client protocol files are copied to the separate Unity repository.
+clients/

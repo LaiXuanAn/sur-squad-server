@@ -2,7 +2,6 @@ package survival
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -416,11 +415,11 @@ func assertStateSnapshot(t *testing.T, dispatcher *testDispatcher, tick int64, p
 	}
 
 	var snapshot system.StateSnapshot
-	if err := json.Unmarshal(dispatcher.broadcastData, &snapshot); err != nil {
+	if err := proto.Unmarshal(dispatcher.broadcastData, &snapshot); err != nil {
 		t.Fatal(err)
 	}
-	if snapshot.Tick != tick || snapshot.PlayerCount != playerCount {
-		t.Fatalf("unexpected state snapshot: %+v", snapshot)
+	if snapshot.Tick != tick || snapshot.PlayerCount != int32(playerCount) {
+		t.Fatalf("unexpected state snapshot: %+v", &snapshot)
 	}
 }
 

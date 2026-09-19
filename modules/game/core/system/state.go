@@ -1,12 +1,7 @@
 package system
 
-import "encoding/json"
-
-type StateSnapshot struct {
-	Tick        int64 `json:"tick"`
-	PlayerCount int   `json:"player_count"`
-}
+import "google.golang.org/protobuf/proto"
 
 func EncodeStateSnapshot(tick int64, playerCount int) ([]byte, error) {
-	return json.Marshal(StateSnapshot{Tick: tick, PlayerCount: playerCount})
+	return proto.Marshal(&StateSnapshot{Tick: tick, PlayerCount: int32(playerCount)})
 }

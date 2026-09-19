@@ -1,8 +1,9 @@
 package system
 
 import (
-	"encoding/json"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
 )
 
 func TestStateSnapshotContainsPlayerCount(t *testing.T) {
@@ -12,10 +13,10 @@ func TestStateSnapshotContainsPlayerCount(t *testing.T) {
 	}
 
 	var snapshot StateSnapshot
-	if err = json.Unmarshal(data, &snapshot); err != nil {
+	if err = proto.Unmarshal(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	if snapshot.Tick != 7 || snapshot.PlayerCount != 2 {
-		t.Fatalf("unexpected snapshot: %+v", snapshot)
+		t.Fatalf("unexpected snapshot: %+v", &snapshot)
 	}
 }
